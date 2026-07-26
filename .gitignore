@@ -1,0 +1,34 @@
+# Rust
+/target
+**/target
+Cargo.lock
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Deploy artifacts (keep deployment.json tracked with placeholders)
+*.wasm
+/contracts/**/test_snapshots/
+
+# Coverage / logs
+coverage/
+*.log
+npm-debug.log*
