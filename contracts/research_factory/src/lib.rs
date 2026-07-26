@@ -143,3 +143,4 @@ impl ResearchFactory {
 }
 
 mod test;
+mod regression;
