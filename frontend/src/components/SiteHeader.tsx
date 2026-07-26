@@ -16,7 +16,9 @@ const links = [
   { href: "/grants", label: "Grants" },
   { href: "/analytics", label: "Analytics" },
   { href: "/activity", label: "Activity" },
+  { href: "/transparency", label: "Transparency" },
   { href: "/profile", label: "Profile" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export function SiteHeader() {

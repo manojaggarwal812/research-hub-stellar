@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { SiteHeader } from "@/components/SiteHeader";
+import { NetworkBanner } from "@/components/NetworkBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
           <ErrorBoundary>
             <div className="rh-shell">
               <SiteHeader />
+              <NetworkBanner />
               <main className="pb-16 pt-6">{children}</main>
             </div>
           </ErrorBoundary>
