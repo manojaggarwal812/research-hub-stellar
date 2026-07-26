@@ -16,8 +16,8 @@ Built for the **Stellar Build Challenge — Orange Belt**. Designed to extend cl
 | Factory orchestration | Verify university → create project → **allocate treasury** in one call |
 | Protocol fees | Fee BPS + recipient on milestone release (`fee`/`col` events) |
 | Console honesty | **Empty-by-default** — no fake seed balances or invented charts |
-| Wallet UX | Wallet picker every connect (Freighter / xBull / LOBSTR / Albedo) |
-| Signing | Freighter-signed invokes (e.g. peer review) with confirm dialogs |
+| Wallet UX | Wallet picker every connect (**Freighter / xBull / LOBSTR / Albedo** real connectors) |
+| Signing | Simulate → assemble → wallet-sign → submit for register / verify / launch / milestones / release / review |
 | Transparency | Public fee + treasury + explorer-linked IDs page |
 | Auth boundaries | Factory-only allocate · treasury-only fund marks · admin verify |
 
@@ -180,13 +180,13 @@ Open http://localhost:3000 (or the port Next assigns).
 
 Pages: Landing · Dashboard · Projects · Universities · Peer Reviews · Grants · Analytics · Activity · **Transparency** · Profile · **Settings**
 
-- Dark / light mode
-- Wallet choice modal on every connect
+- Wallet choice modal on every connect (Freighter / xBull / LOBSTR / Albedo)
 - Network status banner with linked factory ID + wrong-network warning
 - Skeletons, empty states, confirm dialogs, toasts
 - Search / filters / pagination
 - Charts stay empty until RPC returns projects
-- Freighter-signed peer review submits
+- Full signed flows: university register/verify, factory launch, milestones, treasury release, peer review
+- Production invoke path: simulate → assemble → sign → submit
 
 ---
 

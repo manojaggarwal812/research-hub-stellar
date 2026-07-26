@@ -26,4 +26,5 @@
 - Protocol fee collection on release
 - Factory multi-hop allocate
 - Empty-by-default console (no fake seed balances)
-- Wallet picker + confirm dialogs + transparency page
+- Real multi-wallet connectors + confirm dialogs + transparency page
+- End-to-end signed lifecycle actions (not connect-only demos)
