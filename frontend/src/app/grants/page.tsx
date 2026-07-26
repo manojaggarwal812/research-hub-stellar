@@ -1,17 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { PageSkeleton } from "@/components/Skeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
 import { EmptyState } from "@/components/EmptyState";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useHubData } from "@/lib/hub-data";
+import { useWallet } from "@/lib/wallet";
 import { formatXlm, paginate, shortAddress } from "@/lib/format";
+import { toNetworkConfig } from "@/lib/network";
+import { releaseFunding } from "@/lib/actions";
 
 export default function GrantsPage() {
-  const { loading, projects, contracts, treasury } = useHubData();
+  const { loading, projects, contracts, treasury, refresh } = useHubData();
+  const { address, signXdr } = useWallet();
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [projectId, setProjectId] = useState(1);
+  const [milestoneIndex, setMilestoneIndex] = useState(0);
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
     return projects.filter((p) => p.title.toLowerCase().includes(query.toLowerCase()));
@@ -21,12 +31,31 @@ export default function GrantsPage() {
 
   if (loading) return <PageSkeleton />;
 
+  async function release() {
+    if (!address || !contracts) return;
+    setBusy(true);
+    try {
+      const hash = await releaseFunding(
+        { config: toNetworkConfig(contracts), publicKey: address, signXdr },
+        projectId,
+        milestoneIndex,
+      );
+      toast.success(`Funding released (net + fee) · ${hash.slice(0, 10)}…`);
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Release failed");
+    } finally {
+      setBusy(false);
+      setConfirm(false);
+    }
+  }
+
   return (
     <div className="rh-container space-y-6">
       <div>
         <h1 className="font-display text-3xl sm:text-4xl">Grant management</h1>
         <p className="mt-1 text-[var(--muted)]">
-          Factory-allocated treasury balances with protocol fee accounting on release.
+          Admin-signed milestone releases collect protocol fees on-chain.
         </p>
       </div>
 
@@ -51,6 +80,42 @@ export default function GrantsPage() {
         </div>
       </div>
 
+      <form
+        className="rh-panel grid gap-3 p-5 md:grid-cols-3"
+        onSubmit={(e: FormEvent) => {
+          e.preventDefault();
+          if (!address) return toast.error("Connect admin wallet");
+          setConfirm(true);
+        }}
+      >
+        <h2 className="font-display text-xl md:col-span-3">Release funding</h2>
+        <div>
+          <label className="rh-label">Project id</label>
+          <input
+            className="rh-input"
+            type="number"
+            min={1}
+            value={projectId}
+            onChange={(e) => setProjectId(Number(e.target.value))}
+          />
+        </div>
+        <div>
+          <label className="rh-label">Milestone index</label>
+          <input
+            className="rh-input"
+            type="number"
+            min={0}
+            value={milestoneIndex}
+            onChange={(e) => setMilestoneIndex(Number(e.target.value))}
+          />
+        </div>
+        <div className="flex items-end">
+          <button type="submit" className="rh-btn-primary w-full" disabled={busy}>
+            Release on-chain
+          </button>
+        </div>
+      </form>
+
       <input
         className="rh-input"
         placeholder="Filter grants by project title…"
@@ -64,7 +129,7 @@ export default function GrantsPage() {
       {paged.items.length === 0 ? (
         <EmptyState
           title="No grant rows yet"
-          body="When Research Factory launches a project it also allocates the Grant Treasury — balances appear here from RPC."
+          body="Factory allocate credits appear here after launch_research succeeds on testnet."
         />
       ) : (
         <div className="space-y-3">
@@ -76,7 +141,9 @@ export default function GrantsPage() {
             return (
               <article key={p.id} className="rh-panel p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="font-display text-xl">{p.title}</h2>
+                  <h2 className="font-display text-xl">
+                    #{p.id} {p.title}
+                  </h2>
                   <StatusBadge value={p.status} />
                 </div>
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-ink-200 dark:bg-ink-800">
@@ -95,6 +162,15 @@ export default function GrantsPage() {
       )}
 
       <Pagination page={paged.page} totalPages={paged.totalPages} onChange={setPage} />
+
+      <ConfirmDialog
+        open={confirm}
+        title="Release milestone funding?"
+        body={`Sign release_funding for project #${projectId} milestone ${milestoneIndex}. Protocol fee is deducted on-chain.`}
+        confirmLabel={busy ? "Signing…" : "Sign & release"}
+        onCancel={() => setConfirm(false)}
+        onConfirm={() => void release()}
+      />
     </div>
   );
 }

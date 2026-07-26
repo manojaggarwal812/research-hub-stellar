@@ -11,7 +11,7 @@ import { useHubData } from "@/lib/hub-data";
 import { useWallet } from "@/lib/wallet";
 import { formatDate, paginate } from "@/lib/format";
 import { toNetworkConfig } from "@/lib/network";
-import { buildInvokeTx, nativeToScVal, submitSignedXdr } from "@/lib/stellar";
+import { submitPeerReview } from "@/lib/actions";
 import type { ReviewDecision } from "@/lib/types";
 
 const decisionEnum: Record<Exclude<ReviewDecision, "Pending">, number> = {
@@ -58,15 +58,12 @@ export default function ReviewsPage() {
     if (!address || !contracts) return;
     setSubmitting(true);
     try {
-      const net = toNetworkConfig(contracts);
-      const tx = await buildInvokeTx(net, address, contracts.peerReview, "submit_review", [
-        nativeToScVal(address, { type: "address" }),
-        nativeToScVal(projectId, { type: "u64" }),
-        nativeToScVal(score, { type: "u32" }),
-        nativeToScVal(decisionEnum[decision], { type: "u32" }),
-      ]);
-      const signed = await signXdr(tx.toXDR(), net.networkPassphrase);
-      const hash = await submitSignedXdr(net, signed);
+      const hash = await submitPeerReview(
+        { config: toNetworkConfig(contracts), publicKey: address, signXdr },
+        projectId,
+        score,
+        decisionEnum[decision],
+      );
       toast.success(`Peer review submitted · ${hash.slice(0, 10)}…`);
       await refresh();
     } catch (err) {
@@ -82,7 +79,7 @@ export default function ReviewsPage() {
       <div>
         <h1 className="font-display text-3xl sm:text-4xl">Peer reviews</h1>
         <p className="mt-1 text-[var(--muted)]">
-          Freighter-signed `submit_review` against the Peer Review contract.
+          Simulate → assemble → wallet-sign → submit against Peer Review.
         </p>
       </div>
 
@@ -94,13 +91,14 @@ export default function ReviewsPage() {
             value={projectId}
             onChange={(e) => setProjectId(Number(e.target.value))}
           >
-            {(projects.length ? projects : [{ id: 1, title: "Project #1 (enter existing id)" }]).map(
-              (p) => (
-                <option key={p.id} value={p.id}>
-                  #{p.id} {p.title}
-                </option>
-              ),
-            )}
+            {(projects.length
+              ? projects
+              : [{ id: 1, title: "Enter existing project id" }]
+            ).map((p) => (
+              <option key={p.id} value={p.id}>
+                #{p.id} {p.title}
+              </option>
+            ))}
           </select>
         </div>
         <div>
@@ -137,27 +135,25 @@ export default function ReviewsPage() {
         </div>
       </form>
 
-      <div className="flex gap-3">
-        <select
-          className="rh-input max-w-xs"
-          value={decisionFilter}
-          onChange={(e) => {
-            setDecisionFilter(e.target.value);
-            setPage(1);
-          }}
-        >
-          {["All", "Approve", "Revise", "Reject"].map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
-      </div>
+      <select
+        className="rh-input max-w-xs"
+        value={decisionFilter}
+        onChange={(e) => {
+          setDecisionFilter(e.target.value);
+          setPage(1);
+        }}
+      >
+        {["All", "Approve", "Revise", "Reject"].map((d) => (
+          <option key={d} value={d}>
+            {d}
+          </option>
+        ))}
+      </select>
 
       {paged.items.length === 0 ? (
         <EmptyState
           title="No indexed reviews yet"
-          body="Submit a Freighter-signed review for an existing project id. Indexed rows appear after refresh."
+          body="Submit a signed review for an existing project. Indexed rows appear after refresh."
         />
       ) : (
         <div className="space-y-3">
@@ -191,7 +187,7 @@ export default function ReviewsPage() {
       <ConfirmDialog
         open={confirmOpen}
         title="Submit peer review?"
-        body={`Sign submit_review for project #${projectId} with score ${score} (${decision}). This creates a real testnet transaction.`}
+        body={`Sign submit_review for project #${projectId} · score ${score} · ${decision}.`}
         confirmLabel="Sign & submit"
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => void submitOnChain()}
