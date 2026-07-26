@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  contracts:
+    name: Smart Contract Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+      - name: Test contracts
+        run: cargo test --workspace
+      - name: Build release WASM
+        run: >
+          cargo build --release --target wasm32-unknown-unknown
+          -p university_registry
+          -p research_project
+          -p research_factory
+          -p grant_treasury
+          -p peer_review
+          -p publication_registry
+
+  frontend:
+    name: Frontend Lint, Typecheck, Test, Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  deploy-frontend:
+    name: Deploy Frontend (Vercel)
+    needs: [contracts, frontend]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy placeholder
+        run: |
+          echo "Configure Vercel project with root=frontend"
+          echo "Set VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID to enable auto-deploy"
