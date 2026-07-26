@@ -1,12 +1,11 @@
 import {
-  BASE_FEE,
   Contract,
   nativeToScVal,
   scValToNative,
-  TransactionBuilder,
   xdr,
 } from "@stellar/stellar-sdk";
 import { Server as SorobanRpcServer, Api as SorobanApi } from "@stellar/stellar-sdk/rpc";
+import { BASE_FEE, TransactionBuilder } from "@stellar/stellar-sdk";
 import type { NetworkConfig } from "@/lib/network";
 import { isPlaceholderId } from "@/lib/network";
 import type { ActivityEvent, ResearchProject, University } from "@/lib/types";
@@ -158,47 +157,6 @@ export async function fetchFeePolicy(
   const raw = await simulateAndRead<unknown[]>(config, config.grantTreasury, "get_fee_policy");
   const [bps, recipient] = Array.isArray(raw) ? raw : [0, ""];
   return { bps: Number(bps), recipient: String(recipient) };
-}
-
-export async function buildInvokeTx(
-  config: NetworkConfig,
-  publicKey: string,
-  contractId: string,
-  method: string,
-  args: xdr.ScVal[],
-) {
-  const server = rpc(config);
-  const account = await server.getAccount(publicKey);
-  const contract = new Contract(contractId);
-  return new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase: config.networkPassphrase,
-  })
-    .addOperation(contract.call(method, ...args))
-    .setTimeout(60)
-    .build();
-}
-
-export async function submitSignedXdr(
-  config: NetworkConfig,
-  signedXdr: string,
-): Promise<string> {
-  const server = rpc(config);
-  const tx = TransactionBuilder.fromXDR(signedXdr, config.networkPassphrase);
-  const sent = await server.sendTransaction(tx);
-  if (sent.status === "ERROR") {
-    throw new Error(sent.errorResult?.toXDR("base64") ?? "Transaction rejected");
-  }
-  let status = await server.getTransaction(sent.hash);
-  const started = Date.now();
-  while (status.status === "NOT_FOUND" && Date.now() - started < 60_000) {
-    await new Promise((r) => setTimeout(r, 1200));
-    status = await server.getTransaction(sent.hash);
-  }
-  if (status.status !== "SUCCESS") {
-    throw new Error(`Transaction status: ${status.status}`);
-  }
-  return sent.hash;
 }
 
 export async function pollHubEvents(
