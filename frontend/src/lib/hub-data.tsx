@@ -17,25 +17,30 @@ import type {
   ResearchProject,
   University,
 } from "@/lib/types";
+import { toNetworkConfig } from "@/lib/network";
 import {
-  seedActivity,
-  seedProjects,
-  seedPublications,
-  seedReviews,
-  seedUniversities,
-} from "@/lib/seed";
+  fetchProjects,
+  fetchTreasuryTotals,
+  fetchUniversities,
+  pollHubEvents,
+} from "@/lib/stellar";
+
+const DEMO_KEY = "researchhub.demoMode";
 
 type HubData = {
   loading: boolean;
   error: string | null;
+  live: boolean;
+  demoMode: boolean;
+  setDemoMode: (v: boolean) => void;
   universities: University[];
   projects: ResearchProject[];
   reviews: PeerReview[];
   publications: Publication[];
   activity: ActivityEvent[];
+  treasury: { deposited: number; released: number; fees: number };
   contracts: ContractsConfig | null;
   refresh: () => Promise<void>;
-  addLocalReview: (review: Omit<PeerReview, "id" | "createdAt" | "approved">) => void;
 };
 
 const HubDataContext = createContext<HubData | null>(null);
@@ -55,35 +60,59 @@ const fallbackContracts: ContractsConfig = {
 export function HubDataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [live, setLive] = useState(false);
+  const [demoMode, setDemoModeState] = useState(false);
   const [universities, setUniversities] = useState<University[]>([]);
   const [projects, setProjects] = useState<ResearchProject[]>([]);
   const [reviews, setReviews] = useState<PeerReview[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
+  const [treasury, setTreasury] = useState({ deposited: 0, released: 0, fees: 0 });
   const [contracts, setContracts] = useState<ContractsConfig | null>(null);
+
+  useEffect(() => {
+    setDemoModeState(localStorage.getItem(DEMO_KEY) === "1");
+  }, []);
+
+  const setDemoMode = useCallback((v: boolean) => {
+    localStorage.setItem(DEMO_KEY, v ? "1" : "0");
+    setDemoModeState(v);
+  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Simulate RPC hydration latency for skeleton UX.
-      await new Promise((r) => setTimeout(r, 650));
       const res = await fetch("/contracts.json", { cache: "no-store" });
       const cfg = res.ok ? ((await res.json()) as ContractsConfig) : fallbackContracts;
       setContracts(cfg);
-      setUniversities(seedUniversities);
-      setProjects(seedProjects);
-      setReviews(seedReviews);
-      setPublications(seedPublications);
-      setActivity(seedActivity);
+      const net = toNetworkConfig(cfg);
+
+      // Empty-by-default: hydrate from Soroban RPC. Never invent fake balances.
+      const [unis, projs, totals, events] = await Promise.all([
+        fetchUniversities(net).catch(() => [] as University[]),
+        fetchProjects(net).catch(() => [] as ResearchProject[]),
+        fetchTreasuryTotals(net).catch(() => ({ deposited: 0, released: 0, fees: 0 })),
+        pollHubEvents(net).catch(() => [] as ActivityEvent[]),
+      ]);
+
+      setUniversities(unis);
+      setProjects(projs);
+      setTreasury(totals);
+      setActivity(events);
+      setReviews([]);
+      setPublications([]);
+      setLive(unis.length > 0 || projs.length > 0 || events.length > 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load hub data");
       setContracts(fallbackContracts);
-      setUniversities(seedUniversities);
-      setProjects(seedProjects);
-      setReviews(seedReviews);
-      setPublications(seedPublications);
-      setActivity(seedActivity);
+      setUniversities([]);
+      setProjects([]);
+      setReviews([]);
+      setPublications([]);
+      setActivity([]);
+      setTreasury({ deposited: 0, released: 0, fees: 0 });
+      setLive(false);
     } finally {
       setLoading(false);
     }
@@ -91,58 +120,38 @@ export function HubDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
-
-  const addLocalReview = useCallback(
-    (review: Omit<PeerReview, "id" | "createdAt" | "approved">) => {
-      setReviews((prev) => [
-        {
-          ...review,
-          id: prev.length + 1,
-          approved: false,
-          createdAt: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-      setActivity((prev) => [
-        {
-          id: `local-${Date.now()}`,
-          type: "PeerReviewSubmitted",
-          title: "Peer review submitted",
-          detail: `Score ${review.score} for project #${review.projectId}`,
-          timestamp: new Date().toISOString(),
-          projectId: review.projectId,
-        },
-        ...prev,
-      ]);
-    },
-    [],
-  );
+  }, [refresh, demoMode]);
 
   const value = useMemo(
     () => ({
       loading,
       error,
+      live,
+      demoMode,
+      setDemoMode,
       universities,
       projects,
       reviews,
       publications,
       activity,
+      treasury,
       contracts,
       refresh,
-      addLocalReview,
     }),
     [
       loading,
       error,
+      live,
+      demoMode,
+      setDemoMode,
       universities,
       projects,
       reviews,
       publications,
       activity,
+      treasury,
       contracts,
       refresh,
-      addLocalReview,
     ],
   );
 
@@ -151,8 +160,6 @@ export function HubDataProvider({ children }: { children: ReactNode }) {
 
 export function useHubData() {
   const ctx = useContext(HubDataContext);
-  if (!ctx) {
-    throw new Error("useHubData must be used within HubDataProvider");
-  }
+  if (!ctx) throw new Error("useHubData must be used within HubDataProvider");
   return ctx;
 }

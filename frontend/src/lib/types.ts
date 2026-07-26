@@ -90,4 +90,5 @@ export type ContractsConfig = {
   publicationRegistry: string;
   sampleTxHash: string;
   deployedAt?: string;
+  deployer?: string;
 };
