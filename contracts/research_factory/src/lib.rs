@@ -5,13 +5,11 @@ use soroban_sdk::{
     contract, contractclient, contractimpl, contracttype, symbol_short, Address, Env, String,
 };
 
-/// Client for University Registry (cross-contract).
 #[contractclient(name = "UnivRegistryClient")]
 pub trait UniversityRegistryTrait {
     fn is_verified(env: Env, university_id: u64) -> Result<bool, HubError>;
 }
 
-/// Client for Research Project store (cross-contract).
 #[contractclient(name = "ProjectStoreClient")]
 pub trait ResearchProjectTrait {
     fn create_project(
@@ -25,12 +23,23 @@ pub trait ResearchProjectTrait {
     ) -> Result<u64, HubError>;
 }
 
+#[contractclient(name = "TreasuryAllocateClient")]
+pub trait TreasuryAllocateTrait {
+    fn allocate(
+        env: Env,
+        factory: Address,
+        project_id: u64,
+        amount: i128,
+    ) -> Result<(), HubError>;
+}
+
 #[contracttype]
 #[derive(Clone)]
 pub enum DataKey {
     Admin,
     UniversityRegistry,
     ResearchProject,
+    GrantTreasury,
     CreatedCount,
 }
 
@@ -44,6 +53,7 @@ impl ResearchFactory {
         admin: Address,
         university_registry: Address,
         research_project: Address,
+        grant_treasury: Address,
     ) -> Result<(), HubError> {
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(HubError::AlreadyInitialized);
@@ -56,11 +66,14 @@ impl ResearchFactory {
         env.storage()
             .instance()
             .set(&DataKey::ResearchProject, &research_project);
+        env.storage()
+            .instance()
+            .set(&DataKey::GrantTreasury, &grant_treasury);
         env.storage().instance().set(&DataKey::CreatedCount, &0u64);
         Ok(())
     }
 
-    /// Verifies university via University Registry, then creates project via Research Project.
+    /// Orchestrates: verify university → create project → allocate treasury.
     pub fn launch_research(
         env: Env,
         lead: Address,
@@ -84,15 +97,19 @@ impl ResearchFactory {
             .instance()
             .get(&DataKey::ResearchProject)
             .ok_or(HubError::NotInitialized)?;
+        let treasury_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::GrantTreasury)
+            .ok_or(HubError::NotInitialized)?;
 
         let uni_client = UnivRegistryClient::new(&env, &uni_addr);
-        let verified = uni_client.is_verified(&university_id);
-        if !verified {
+        if !uni_client.is_verified(&university_id) {
             return Err(HubError::UniversityNotVerified);
         }
 
-        let project_client = ProjectStoreClient::new(&env, &project_addr);
         let factory_addr = env.current_contract_address();
+        let project_client = ProjectStoreClient::new(&env, &project_addr);
         let project_id = project_client.create_project(
             &factory_addr,
             &lead,
@@ -101,6 +118,9 @@ impl ResearchFactory {
             &abstract_text,
             &grant_amount,
         );
+
+        let treasury = TreasuryAllocateClient::new(&env, &treasury_addr);
+        treasury.allocate(&factory_addr, &project_id, &grant_amount);
 
         let mut created: u64 = env
             .storage()
@@ -115,6 +135,10 @@ impl ResearchFactory {
         env.events().publish(
             (symbol_short!("res"), symbol_short!("launch")),
             (project_id, lead, university_id, grant_amount),
+        );
+        env.events().publish(
+            (symbol_short!("act"), symbol_short!("upd")),
+            (project_id, symbol_short!("launch")),
         );
 
         Ok(project_id)
@@ -138,6 +162,13 @@ impl ResearchFactory {
         env.storage()
             .instance()
             .get(&DataKey::ResearchProject)
+            .ok_or(HubError::NotInitialized)
+    }
+
+    pub fn get_grant_treasury(env: Env) -> Result<Address, HubError> {
+        env.storage()
+            .instance()
+            .get(&DataKey::GrantTreasury)
             .ok_or(HubError::NotInitialized)
     }
 }

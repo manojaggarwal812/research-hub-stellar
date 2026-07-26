@@ -33,8 +33,12 @@ pub trait ProjectMilestonesTrait {
 pub enum DataKey {
     Admin,
     ResearchProject,
+    Factory,
+    FeeBps,
+    FeeRecipient,
     TotalDeposited,
     TotalReleased,
+    TotalFees,
     ProjectBalance(u64),
     GrantApproved(u64),
 }
@@ -48,24 +52,82 @@ impl GrantTreasury {
         env: Env,
         admin: Address,
         research_project: Address,
+        factory: Address,
+        fee_bps: u32,
+        fee_recipient: Address,
     ) -> Result<(), HubError> {
         if env.storage().instance().has(&DataKey::Admin) {
             return Err(HubError::AlreadyInitialized);
+        }
+        if fee_bps > 1_000 {
+            // Cap at 10%
+            return Err(HubError::InvalidAmount);
         }
         admin.require_auth();
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage()
             .instance()
             .set(&DataKey::ResearchProject, &research_project);
+        env.storage().instance().set(&DataKey::Factory, &factory);
+        env.storage().instance().set(&DataKey::FeeBps, &fee_bps);
+        env.storage()
+            .instance()
+            .set(&DataKey::FeeRecipient, &fee_recipient);
         env.storage()
             .instance()
             .set(&DataKey::TotalDeposited, &0i128);
         env.storage()
             .instance()
             .set(&DataKey::TotalReleased, &0i128);
+        env.storage().instance().set(&DataKey::TotalFees, &0i128);
         Ok(())
     }
 
+    pub fn set_fee_policy(
+        env: Env,
+        admin: Address,
+        fee_bps: u32,
+        fee_recipient: Address,
+    ) -> Result<(), HubError> {
+        admin.require_auth();
+        let expected: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(HubError::NotInitialized)?;
+        if admin != expected {
+            return Err(HubError::Unauthorized);
+        }
+        if fee_bps > 1_000 {
+            return Err(HubError::InvalidAmount);
+        }
+        env.storage().instance().set(&DataKey::FeeBps, &fee_bps);
+        env.storage()
+            .instance()
+            .set(&DataKey::FeeRecipient, &fee_recipient);
+        Ok(())
+    }
+
+    /// Factory-only allocation after research launch (inter-contract).
+    pub fn allocate(
+        env: Env,
+        factory: Address,
+        project_id: u64,
+        amount: i128,
+    ) -> Result<(), HubError> {
+        factory.require_auth();
+        let expected: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Factory)
+            .ok_or(HubError::NotInitialized)?;
+        if factory != expected {
+            return Err(HubError::Unauthorized);
+        }
+        Self::credit_grant(env, project_id, amount)
+    }
+
+    /// Admin path for manual grant approval.
     pub fn approve_grant(
         env: Env,
         admin: Address,
@@ -81,6 +143,10 @@ impl GrantTreasury {
         if admin != expected {
             return Err(HubError::Unauthorized);
         }
+        Self::credit_grant(env, project_id, amount)
+    }
+
+    fn credit_grant(env: Env, project_id: u64, amount: i128) -> Result<(), HubError> {
         if amount <= 0 {
             return Err(HubError::InvalidAmount);
         }
@@ -92,7 +158,7 @@ impl GrantTreasury {
             .ok_or(HubError::NotInitialized)?;
         let project_client = ProjectMilestonesClient::new(&env, &project_addr);
         let project = project_client.get_project(&project_id);
-        if project.grant_amount != amount && amount > project.grant_amount {
+        if amount > project.grant_amount {
             return Err(HubError::InvalidAmount);
         }
 
@@ -125,13 +191,14 @@ impl GrantTreasury {
         Ok(())
     }
 
-    /// Approve milestone on research project, then release funds (inter-contract).
+    /// Release milestone funding with protocol fee collection.
+    /// Returns (net_to_project, fee_collected).
     pub fn release_funding(
         env: Env,
         admin: Address,
         project_id: u64,
         milestone_index: u32,
-    ) -> Result<i128, HubError> {
+    ) -> Result<(i128, i128), HubError> {
         admin.require_auth();
         let expected: Address = env
             .storage()
@@ -175,6 +242,14 @@ impl GrantTreasury {
             return Err(HubError::InsufficientFunds);
         }
 
+        let fee_bps: u32 = env
+            .storage()
+            .instance()
+            .get(&DataKey::FeeBps)
+            .unwrap_or(0);
+        let fee = amount.saturating_mul(fee_bps as i128) / 10_000;
+        let net = amount - fee;
+
         let treasury_addr = env.current_contract_address();
         if milestone.status == MilestoneStatus::Submitted {
             project_client.complete_milestone(&treasury_addr, &project_id, &milestone_index);
@@ -183,7 +258,7 @@ impl GrantTreasury {
             &treasury_addr,
             &project_id,
             &milestone_index,
-            &amount,
+            &net,
         );
 
         env.storage()
@@ -195,17 +270,31 @@ impl GrantTreasury {
             .instance()
             .get(&DataKey::TotalReleased)
             .unwrap_or(0);
-        released += amount;
+        released += net;
         env.storage()
             .instance()
             .set(&DataKey::TotalReleased, &released);
 
+        if fee > 0 {
+            let mut fees: i128 = env
+                .storage()
+                .instance()
+                .get(&DataKey::TotalFees)
+                .unwrap_or(0);
+            fees += fee;
+            env.storage().instance().set(&DataKey::TotalFees, &fees);
+            env.events().publish(
+                (symbol_short!("fee"), symbol_short!("col")),
+                (project_id, fee),
+            );
+        }
+
         env.events().publish(
             (symbol_short!("fund"), symbol_short!("rel")),
-            (project_id, milestone_index, amount),
+            (project_id, milestone_index, net),
         );
 
-        Ok(amount)
+        Ok((net, fee))
     }
 
     pub fn get_project_balance(env: Env, project_id: u64) -> i128 {
@@ -215,7 +304,7 @@ impl GrantTreasury {
             .unwrap_or(0)
     }
 
-    pub fn get_totals(env: Env) -> (i128, i128) {
+    pub fn get_totals(env: Env) -> (i128, i128, i128) {
         let deposited = env
             .storage()
             .instance()
@@ -226,7 +315,26 @@ impl GrantTreasury {
             .instance()
             .get(&DataKey::TotalReleased)
             .unwrap_or(0);
-        (deposited, released)
+        let fees = env
+            .storage()
+            .instance()
+            .get(&DataKey::TotalFees)
+            .unwrap_or(0);
+        (deposited, released, fees)
+    }
+
+    pub fn get_fee_policy(env: Env) -> Result<(u32, Address), HubError> {
+        let bps = env
+            .storage()
+            .instance()
+            .get(&DataKey::FeeBps)
+            .ok_or(HubError::NotInitialized)?;
+        let recipient = env
+            .storage()
+            .instance()
+            .get(&DataKey::FeeRecipient)
+            .ok_or(HubError::NotInitialized)?;
+        Ok((bps, recipient))
     }
 
     pub fn is_grant_approved(env: Env, project_id: u64) -> bool {

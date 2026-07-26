@@ -42,7 +42,7 @@ fn submit_and_approve_review() {
         &String::from_str(&env, "Imaging"),
         &2_000i128,
     );
-    let rid = reviews.submit_review(&reviewer, &pid, &88u32, &ReviewDecision::Approve);
+    let rid = reviews.submit_review(&reviewer, &pid, &88u32, &1u32);
     assert_eq!(rid, 1);
     assert_eq!(reviews.project_review_count(&pid), 1);
     reviews.approve_review(&admin, &rid);
@@ -62,7 +62,7 @@ fn invalid_score_rejected() {
         &String::from_str(&env, "B"),
         &100i128,
     );
-    let result = reviews.try_submit_review(&reviewer, &pid, &150u32, &ReviewDecision::Reject);
+    let result = reviews.try_submit_review(&reviewer, &pid, &150u32, &3u32);
     assert!(result.is_err());
 }
 
@@ -70,6 +70,6 @@ fn invalid_score_rejected() {
 fn review_missing_project_fails() {
     let (env, _admin, _factory, _project, reviews) = setup();
     let reviewer = Address::generate(&env);
-    let result = reviews.try_submit_review(&reviewer, &99u64, &50u32, &ReviewDecision::Revise);
+    let result = reviews.try_submit_review(&reviewer, &99u64, &50u32, &2u32);
     assert!(result.is_err());
 }

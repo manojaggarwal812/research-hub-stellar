@@ -47,12 +47,21 @@ impl PeerReviewContract {
         reviewer: Address,
         project_id: u64,
         score: u32,
-        decision: ReviewDecision,
+        decision: u32,
     ) -> Result<u64, HubError> {
         reviewer.require_auth();
         if score > 100 {
             return Err(HubError::InvalidScore);
         }
+        if decision > 3 {
+            return Err(HubError::InvalidState);
+        }
+        let decision_enum = match decision {
+            1 => ReviewDecision::Approve,
+            2 => ReviewDecision::Revise,
+            3 => ReviewDecision::Reject,
+            _ => ReviewDecision::Pending,
+        };
 
         let project_addr: Address = env
             .storage()
@@ -75,7 +84,7 @@ impl PeerReviewContract {
             project_id,
             reviewer: reviewer.clone(),
             score,
-            decision,
+            decision: decision_enum,
             approved: false,
         };
 

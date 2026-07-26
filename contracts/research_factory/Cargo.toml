@@ -14,5 +14,6 @@ interfaces = { path = "../interfaces" }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
+grant_treasury = { path = "../grant_treasury" }
 university_registry = { path = "../university_registry" }
 research_project = { path = "../research_project" }
