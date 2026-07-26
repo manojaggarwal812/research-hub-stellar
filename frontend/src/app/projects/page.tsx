@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { PageSkeleton } from "@/components/Skeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import { useHubData } from "@/lib/hub-data";
 import { formatXlm, paginate } from "@/lib/format";
 
@@ -63,7 +64,13 @@ export default function ProjectsPage() {
       </div>
 
       <div className="space-y-4">
-        {paged.items.map((p) => {
+        {paged.items.length === 0 ? (
+          <EmptyState
+            title="No projects on ledger"
+            body="Factory launches appear here after a verified university creates research on testnet."
+          />
+        ) : (
+          paged.items.map((p) => {
           const uni = universities.find((u) => u.id === p.universityId);
           return (
             <article key={p.id} className="rh-panel p-5">
@@ -78,7 +85,7 @@ export default function ProjectsPage() {
                 <span>{p.field}</span>
                 <span>{uni?.name ?? `University #${p.universityId}`}</span>
                 <span>
-                  {formatXlm(p.releasedAmount)} / {formatXlm(p.grantAmount)} XLM
+                  {formatXlm(p.releasedAmount)} / {formatXlm(p.grantAmount)}
                 </span>
               </div>
               <div className="mt-4 space-y-2">
@@ -91,7 +98,7 @@ export default function ProjectsPage() {
                       M{m.index + 1}: {m.title}
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[var(--muted)]">{formatXlm(m.amount)} XLM</span>
+                      <span className="text-[var(--muted)]">{formatXlm(m.amount)}</span>
                       <StatusBadge value={m.status} />
                     </div>
                   </div>
@@ -99,9 +106,7 @@ export default function ProjectsPage() {
               </div>
             </article>
           );
-        })}
-        {paged.items.length === 0 && (
-          <p className="text-sm text-[var(--muted)]">No projects match your filters.</p>
+        })
         )}
       </div>
 
