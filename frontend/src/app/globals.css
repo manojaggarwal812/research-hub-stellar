@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f4f7f6;
+  --fg: #141c1a;
+  --muted: #54786d;
+  --surface: rgba(255, 255, 255, 0.72);
+  --border: rgba(41, 55, 51, 0.12);
+}
+
+.dark {
+  --bg: #0d1312;
+  --fg: #e8f0ed;
+  --muted: #9bb8ae;
+  --surface: rgba(41, 55, 51, 0.45);
+  --border: rgba(228, 240, 237, 0.1);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+@layer components {
+  .rh-shell {
+    @apply min-h-screen bg-[var(--bg)] text-[var(--fg)];
+  }
+
+  .rh-container {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .rh-panel {
+    @apply rounded-2xl border border-[var(--border)] bg-[var(--surface)] backdrop-blur-md;
+  }
+
+  .rh-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .rh-btn-primary {
+    @apply rh-btn bg-ember-500 text-white hover:bg-ember-600 focus-visible:outline-ember-500;
+  }
+
+  .rh-btn-secondary {
+    @apply rh-btn border border-[var(--border)] bg-transparent hover:bg-ink-100/60 dark:hover:bg-ink-800/60;
+  }
+
+  .rh-input {
+    @apply w-full rounded-xl border border-[var(--border)] bg-white/70 px-3 py-2.5 text-sm outline-none ring-ember-500/0 transition focus:ring-2 dark:bg-ink-900/60;
+  }
+
+  .rh-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--muted)];
+  }
+
+  .skeleton {
+    @apply animate-shimmer rounded-xl bg-gradient-to-r from-ink-200/70 via-ink-100 to-ink-200/70 bg-[length:200%_100%] dark:from-ink-800 dark:via-ink-700 dark:to-ink-800;
+  }
+}
