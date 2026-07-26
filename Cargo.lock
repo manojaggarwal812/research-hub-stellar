@@ -1188,6 +1188,7 @@ dependencies = [
 name = "research_factory"
 version = "0.1.0"
 dependencies = [
+ "grant_treasury",
  "interfaces",
  "research_project",
  "soroban-sdk",
