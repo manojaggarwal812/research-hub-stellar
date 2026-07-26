@@ -1,193 +1,238 @@
 # ResearchHub
 
-**Orange Belt** — Production-ready decentralized Research Grant & Collaboration Platform on Stellar (Soroban).
+**Decentralized research grant & collaboration lifecycle on Stellar Soroban.**
 
-ResearchHub lets universities, funders, professors, students, and reviewers manage the **full research grant lifecycle** on-chain: institution verification, project launch, milestone approvals, peer review, publications, and transparent treasury releases.
+ResearchHub is institutional research governance — not crowdfunding, not a document vault, not an education portal. Universities, funders, labs, reviewers, and students coordinate verified institutions, factory-launched projects, milestone releases, peer review, publications, and protocol-fee treasury accounting with an immutable event trail.
 
-This is **not** a document manager, crowdfunding app, or education portal.
+Built for the **Stellar Build Challenge — Orange Belt**. Designed to extend cleanly into a Green Belt production MVP.
 
-![Stellar Testnet](https://img.shields.io/badge/network-testnet-blue)
-![Rust](https://img.shields.io/badge/contracts-Rust%2FSoroban-orange)
-![Next.js](https://img.shields.io/badge/frontend-Next.js%20%2B%20TypeScript-black)
+---
 
-## Live Demo
+## Why ResearchHub stands out (vs typical Orange Belt dApps)
 
-| Resource | Link |
-|----------|------|
-| **Live App** | _Deploy to Vercel — see [Deployment](#deployment)_ |
-| **Demo Video** | _Add 1–2 min walkthrough after recording_ |
-| **University Registry** | [`CA3W4JP7PKEZSLXUCQK6B6HH4CB5LJFEODYG5BTG6FOWTZ5FWS5Y22ER`](https://stellar.expert/explorer/testnet/contract/CA3W4JP7PKEZSLXUCQK6B6HH4CB5LJFEODYG5BTG6FOWTZ5FWS5Y22ER) |
-| **Research Factory** | [`CAKITIFTFG6WSQXCEL5RABFFRO46BKEIC73GFOEHMS4SQDHY24EOWBDD`](https://stellar.expert/explorer/testnet/contract/CAKITIFTFG6WSQXCEL5RABFFRO46BKEIC73GFOEHMS4SQDHY24EOWBDD) |
-| **Research Project** | [`CDEP2M6WTYHTDB74UPJL7VNFZYONJDGSLGGDJNTOFSLBF2MNPUP6WQ5T`](https://stellar.expert/explorer/testnet/contract/CDEP2M6WTYHTDB74UPJL7VNFZYONJDGSLGGDJNTOFSLBF2MNPUP6WQ5T) |
-| **Grant Treasury** | [`CB2FYQ5L63CRQE5HQ5RMD2AEEOSIZN674LQAG2NLMBY34GHEKCCTPW7T`](https://stellar.expert/explorer/testnet/contract/CB2FYQ5L63CRQE5HQ5RMD2AEEOSIZN674LQAG2NLMBY34GHEKCCTPW7T) |
-| **Peer Review** | [`CD4HGQ6OIH3FKF43KQEKOWORWCK3LR6JYK236ZWDVH26AYGZW6OQVLJY`](https://stellar.expert/explorer/testnet/contract/CD4HGQ6OIH3FKF43KQEKOWORWCK3LR6JYK236ZWDVH26AYGZW6OQVLJY) |
-| **Publication Registry** | [`CCQCQF5TPUBMT73XI7AFXRTSIRBJKNE35GIVOFUYELJL5KTXU6ISQG4S`](https://stellar.expert/explorer/testnet/contract/CCQCQF5TPUBMT73XI7AFXRTSIRBJKNE35GIVOFUYELJL5KTXU6ISQG4S) |
-| **Sample Tx Hash** | [`9dbe2b44…`](https://stellar.expert/explorer/testnet/tx/9dbe2b44e715b75d2e5cb9d342b199287433cffcdf032a25958fde676a6c70f9) |
+| Capability | ResearchHub |
+|---|---|
+| Contract surface | **Six** single-responsibility Soroban contracts |
+| Factory orchestration | Verify university → create project → **allocate treasury** in one call |
+| Protocol fees | Fee BPS + recipient on milestone release (`fee`/`col` events) |
+| Console honesty | **Empty-by-default** — no fake seed balances or invented charts |
+| Wallet UX | Wallet picker every connect (Freighter / xBull / LOBSTR / Albedo) |
+| Signing | Freighter-signed invokes (e.g. peer review) with confirm dialogs |
+| Transparency | Public fee + treasury + explorer-linked IDs page |
+| Auth boundaries | Factory-only allocate · treasury-only fund marks · admin verify |
 
-> Addresses written by `npm run deploy` into `deployment.json` and `frontend/public/contracts.json`.
+Compared with peers such as [ImpactChain](https://github.com/Nikkunj-145/ImpactChain/) (excellent grant/CSR Orange Belt work), ResearchHub adds **research-native peer review + publication registry**, deeper factory→treasury allocation, and an empty-ledger console policy.
 
-## Architecture
+---
 
+## Live demo & submission
+
+| | Link |
+|---|---|
+| **Live app (Vercel)** | _Deploy frontend — see [`docs/VERCEL_DEPLOY.md`](./docs/VERCEL_DEPLOY.md)_ |
+| **Demo video** | _Record with [`docs/DEMO_VIDEO.md`](./docs/DEMO_VIDEO.md)_ |
+| **GitHub** | _Push this repo under your account_ |
+| **Deploy / sample tx** | See [`deployments/testnet.json`](./deployments/testnet.json) |
+| **University Registry** | [`CBHNV4VX…`](https://stellar.expert/explorer/testnet/contract/CBHNV4VXXFPJMRN2HLKR3LZ2J3DAE23NK7CPL23GYBA7HKRCO5O5DWLQ) |
+| **Research Factory** | [`CC5DXDWP…`](https://stellar.expert/explorer/testnet/contract/CC5DXDWPMJLYS6TEBO4CEV4VWFRD3DBQ3AYVGH3ZRUQVFPFHGQNCVGVJ) |
+| **Research Project** | [`CATLDEZI…`](https://stellar.expert/explorer/testnet/contract/CATLDEZIGMPJUX4LV3TWESFLO2EPGUZ6D3I3FNMMV7CBJ7GJYTSK4LBP) |
+| **Grant Treasury** | [`CDAQ3SMG…`](https://stellar.expert/explorer/testnet/contract/CDAQ3SMGVUO4WACRSYCRXHJ36RXUMSAPNJYOA74LPK23NA7JBMDR3VM4) |
+| **Peer Review** | [`CDGMFA7I…`](https://stellar.expert/explorer/testnet/contract/CDGMFA7IASZCFNHTRKUU7U4FVLYGEXVOLAM4K7MX5GAJBBDVESPYPNVX) |
+| **Publication Registry** | [`CB4SF43J…`](https://stellar.expert/explorer/testnet/contract/CB4SF43JBSUND2SEMEG4GP2MA6SRXGR7RFHM4P5URQFMCBSAVJDIZJNW) |
+| **Sample Tx** | [`718ed421…`](https://stellar.expert/explorer/testnet/tx/718ed421203fc9e13910271d3d9aa068cb18b93c493460a7c766962abc997979) |
+
+> Live IDs also live in [`deployments/testnet.json`](./deployments/testnet.json) and `frontend/public/contracts.json`.
+
+---
+
+## System architecture
+
+```mermaid
+flowchart TB
+  subgraph Clients
+    UI[Next.js Research Console]
+    Wallets[Freighter / xBull / LOBSTR / Albedo]
+  end
+
+  subgraph Soroban["Stellar Testnet · Soroban"]
+    UNI[University Registry]
+    FAC[Research Factory]
+    PROJ[Research Project]
+    TRE[Grant Treasury]
+    REV[Peer Review]
+    PUB[Publication Registry]
+  end
+
+  UI --> Wallets
+  UI --> UNI & FAC & PROJ & TRE & REV & PUB
+
+  FAC -->|is_verified| UNI
+  FAC -->|create_project| PROJ
+  FAC -->|allocate| TRE
+  TRE -->|complete + mark_funded| PROJ
+  REV -->|get_project| PROJ
+  PUB -->|get_project| PROJ
 ```
-┌────────────────────┐   is_verified    ┌─────────────────────┐
-│ University Registry│◀─────────────────│  Research Factory   │
-└────────────────────┘                  └──────────┬──────────┘
-                                                   │ create_project
-                                                   ▼
-┌────────────────────┐  complete/fund   ┌─────────────────────┐
-│   Grant Treasury   │─────────────────▶│  Research Project   │
-└────────────────────┘                  └──────────┬──────────┘
-                                                   │ get_project
-                          ┌────────────────────────┼────────────────────────┐
-                          ▼                        ▼                        ▼
-                 ┌────────────────┐     ┌──────────────────┐     ┌────────────────────┐
-                 │  Peer Review   │     │ Publication Reg. │     │   Event Stream     │
-                 └────────────────┘     └──────────────────┘     └─────────┬──────────┘
-                                                                           │
-                                                                 ┌─────────▼─────────┐
-                                                                 │ Next.js Frontend  │
-                                                                 │ Freighter + RPC   │
-                                                                 └───────────────────┘
+
+### Research lifecycle
+
+```mermaid
+sequenceDiagram
+  participant Admin
+  participant Uni as University Registry
+  participant Factory as Research Factory
+  participant Project as Research Project
+  participant Treasury as Grant Treasury
+  participant Review as Peer Review
+
+  Admin->>Uni: register_university
+  Admin->>Uni: verify_university
+  Note over Factory: lead signs launch_research
+  Factory->>Uni: is_verified
+  Factory->>Project: create_project
+  Factory->>Treasury: allocate
+  Note over Project: lead adds + submits milestones
+  Admin->>Treasury: release_funding (net + fee)
+  Treasury->>Project: complete_milestone + mark_funded
+  Review->>Project: get_project
+  Review-->>Review: submit_review / approve_review
 ```
 
-### Smart Contracts
+### Authorization model
 
-| Contract | Responsibility |
-|----------|----------------|
-| `university_registry` | Register & verify institutions |
-| `research_factory` | Gate launches on verified universities; create projects |
+```mermaid
+flowchart LR
+  Admin -->|initialize / verify / release| Core
+  Factory -->|create_project| Project
+  Factory -->|allocate| Treasury
+  Treasury -->|mark_funded| Project
+  Lead -->|milestones / complete| Project
+  Reviewer -->|submit_review| PeerReview
+  LeadOrAdmin -->|register_publication| Publications
+```
+
+---
+
+## Smart contracts
+
+| Contract | Role |
+|---|---|
+| `university_registry` | Register / verify institutions |
+| `research_factory` | Gate launches + create project + allocate treasury |
 | `research_project` | Project + milestone lifecycle |
-| `grant_treasury` | Approve grants; release milestone funding |
-| `peer_review` | Submit & approve scored reviews |
-| `publication_registry` | Register DOI-linked publications |
+| `grant_treasury` | Allocate, release, collect protocol fees |
+| `peer_review` | Scored reviews tied to projects |
+| `publication_registry` | DOI-linked publications |
 | `interfaces` | Shared types & errors |
 
-### Frontend
+### Events
 
-- Next.js 15 + TypeScript + Tailwind CSS
-- Freighter wallet integration
-- Dark mode, skeletons, toasts, error boundary
-- Search, filters, pagination, Recharts analytics
-- Responsive: desktop, tablet, mobile
+`univ/reg` · `univ/verify` · `res/launch` · `grant/ok` · `ms/*` · `rev/sub` · `rev/ok` · `pub/reg` · `fund/rel` · `fee/col` · `res/done` · `act/upd`
 
-## Orange Belt Requirements
+---
 
-| Requirement | Status |
-|-------------|--------|
-| Advanced Soroban smart contracts | ✅ Six domain contracts + shared interfaces |
-| Multiple smart contracts | ✅ 6 deployable contracts |
-| Contract-to-contract communication | ✅ Factory→Registry/Project, Treasury→Project, Review/Pub→Project |
-| Event streaming | ✅ Lifecycle events + Activity timeline UI |
-| Production-ready architecture | ✅ Workspace, scripts, typed frontend, CI |
-| Mobile responsive frontend | ✅ Header drawer + responsive grids |
-| Proper loading states | ✅ Skeleton loaders |
-| Proper error handling | ✅ Error boundary + toasts + banners |
-| Smart contract testing | ✅ 17 tests (auth, edge, integration) |
-| Frontend testing | ✅ Vitest unit + component tests |
-| CI/CD pipeline | ✅ GitHub Actions lint/typecheck/test/build |
-| Deployment scripts | ✅ `scripts/deploy.mjs` |
-| Professional documentation | ✅ This README + `docs/` |
-| Stellar Testnet deployment | ✅ Deployed via `npm run deploy` |
-| Contract addresses | ✅ See Live Demo table |
-| Transaction hash | ✅ `9dbe2b44e715b75d2e5cb9d342b199287433cffcdf032a25958fde676a6c70f9` |
-| Live demo ready | ✅ `npm run dev` / Vercel |
-| Minimum 20 meaningful commits | ✅ Git history |
-
-## Quick Start
-
-### Prerequisites
-
-- [Rust](https://rustup.rs/) 1.84+ with `wasm32-unknown-unknown`
-- [Stellar CLI](https://developers.stellar.org/docs/tools/cli)
-- [Node.js](https://nodejs.org/) 20+
-- [Freighter](https://www.freighter.app/)
-
-### Install
-
-```bash
-git clone https://github.com/YOUR_USERNAME/ResearchHub.git
-cd ResearchHub
-cd frontend && npm install && cd ..
-```
-
-### Test
-
-```bash
-# All (17 contract + frontend)
-npm test
-
-# Contracts only
-cargo test --workspace
-
-# Frontend only
-npm run test:frontend
-```
-
-### Develop
-
-```bash
-npm run dev
-# http://localhost:3000
-```
-
-### Build
-
-```bash
-npm run build
-```
-
-### Deploy Contracts (Testnet)
-
-```bash
-stellar keys generate deployer --network testnet --fund
-stellar network use testnet
-npm run deploy
-```
-
-### Deploy Frontend
-
-```bash
-cd frontend
-npx vercel --prod
-```
-
-Set Vercel root directory to `frontend`.
-
-## Project Structure
+## Repository layout
 
 ```
 ResearchHub/
-├── contracts/
-│   ├── interfaces/
-│   ├── university_registry/
-│   ├── research_factory/
-│   ├── research_project/
-│   ├── grant_treasury/
-│   ├── peer_review/
-│   └── publication_registry/
-├── frontend/                 # Next.js app
-├── scripts/deploy.mjs
+├── contracts/                 # 6 Soroban crates + interfaces + tests
+├── frontend/                  # Next.js 15 · TypeScript · Tailwind
+├── scripts/deploy.mjs         # Build → deploy → initialize → sample txs
+├── deployments/testnet.json   # Live addresses + sample tx hash
+├── docs/                      # Architecture, testing, checklist, Vercel, demo
 ├── .github/workflows/ci.yml
-├── docs/
-├── deployment.json
+├── Makefile
 └── README.md
 ```
 
-## Events
+---
 
-| Event | When |
-|-------|------|
-| UniversityRegistered | Institution registered |
-| ResearchCreated / launch | Factory creates project |
-| GrantApproved | Treasury approves allocation |
-| MilestoneCompleted | Milestone approved |
-| PeerReviewSubmitted | Review submitted |
-| PeerReviewApproved | Review attested |
-| PublicationRegistered | DOI registered |
-| FundingReleased | Treasury payout |
-| ResearchCompleted | Project closed |
-| ActivityUpdated | Status / stream sync |
+## Quick start
+
+### Prerequisites
+
+- Rust stable + `wasm32v1-none`
+- [Stellar CLI](https://developers.stellar.org/docs/tools/cli) v25+
+- Node.js 20+
+- [Freighter](https://www.freighter.app/)
+
+### One-liners
+
+```bash
+make test          # contracts + frontend
+make frontend-dev  # http://localhost:3000
+make deploy        # testnet (funded `deployer` key)
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:3000 (or the port Next assigns).
+
+---
+
+## Frontend quality bar
+
+Pages: Landing · Dashboard · Projects · Universities · Peer Reviews · Grants · Analytics · Activity · **Transparency** · Profile · **Settings**
+
+- Dark / light mode
+- Wallet choice modal on every connect
+- Network status banner with linked factory ID + wrong-network warning
+- Skeletons, empty states, confirm dialogs, toasts
+- Search / filters / pagination
+- Charts stay empty until RPC returns projects
+- Freighter-signed peer review submits
+
+---
+
+## Testing
+
+```bash
+# 21+ smart-contract tests (auth, fees, factory allocate, regression)
+cargo test --workspace
+
+cd frontend
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
+
+---
+
+## Orange Belt checklist
+
+Mapped requirement → implementation: [`docs/ORANGE_BELT_CHECKLIST.md`](./docs/ORANGE_BELT_CHECKLIST.md)
+
+---
+
+## Docs
+
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
+- [`docs/TESTING.md`](./docs/TESTING.md)
+- [`docs/VERCEL_DEPLOY.md`](./docs/VERCEL_DEPLOY.md)
+- [`docs/DEMO_VIDEO.md`](./docs/DEMO_VIDEO.md)
+- [`docs/SUBMISSION.md`](./docs/SUBMISSION.md)
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md)
+
+---
+
+## Security notes
+
+- Admin-only initialize / university verify / fee policy / funding release
+- Factory-only project creation and treasury `allocate`
+- Treasury-only `mark_milestone_funded`
+- Peer review / publication gated on existing projects
+- Fee BPS capped at 10%
+- Verified-university gate before launch
+
+---
 
 ## License
 
-MIT
+MIT © Manoj Aggarwal
