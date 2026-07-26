@@ -16,15 +16,15 @@ This is **not** a document manager, crowdfunding app, or education portal.
 |----------|------|
 | **Live App** | _Deploy to Vercel — see [Deployment](#deployment)_ |
 | **Demo Video** | _Add 1–2 min walkthrough after recording_ |
-| **University Registry** | `CUNIVERSITY_REGISTRY_PLACEHOLDER` |
-| **Research Factory** | `CRESEARCH_FACTORY_PLACEHOLDER` |
-| **Research Project** | `CRESEARCH_PROJECT_PLACEHOLDER` |
-| **Grant Treasury** | `CGRANT_TREASURY_PLACEHOLDER` |
-| **Peer Review** | `CPEER_REVIEW_PLACEHOLDER` |
-| **Publication Registry** | `CPUBLICATION_REGISTRY_PLACEHOLDER` |
-| **Sample Tx Hash** | `TX_HASH_PLACEHOLDER` |
+| **University Registry** | [`CA3W4JP7PKEZSLXUCQK6B6HH4CB5LJFEODYG5BTG6FOWTZ5FWS5Y22ER`](https://stellar.expert/explorer/testnet/contract/CA3W4JP7PKEZSLXUCQK6B6HH4CB5LJFEODYG5BTG6FOWTZ5FWS5Y22ER) |
+| **Research Factory** | [`CAKITIFTFG6WSQXCEL5RABFFRO46BKEIC73GFOEHMS4SQDHY24EOWBDD`](https://stellar.expert/explorer/testnet/contract/CAKITIFTFG6WSQXCEL5RABFFRO46BKEIC73GFOEHMS4SQDHY24EOWBDD) |
+| **Research Project** | [`CDEP2M6WTYHTDB74UPJL7VNFZYONJDGSLGGDJNTOFSLBF2MNPUP6WQ5T`](https://stellar.expert/explorer/testnet/contract/CDEP2M6WTYHTDB74UPJL7VNFZYONJDGSLGGDJNTOFSLBF2MNPUP6WQ5T) |
+| **Grant Treasury** | [`CB2FYQ5L63CRQE5HQ5RMD2AEEOSIZN674LQAG2NLMBY34GHEKCCTPW7T`](https://stellar.expert/explorer/testnet/contract/CB2FYQ5L63CRQE5HQ5RMD2AEEOSIZN674LQAG2NLMBY34GHEKCCTPW7T) |
+| **Peer Review** | [`CD4HGQ6OIH3FKF43KQEKOWORWCK3LR6JYK236ZWDVH26AYGZW6OQVLJY`](https://stellar.expert/explorer/testnet/contract/CD4HGQ6OIH3FKF43KQEKOWORWCK3LR6JYK236ZWDVH26AYGZW6OQVLJY) |
+| **Publication Registry** | [`CCQCQF5TPUBMT73XI7AFXRTSIRBJKNE35GIVOFUYELJL5KTXU6ISQG4S`](https://stellar.expert/explorer/testnet/contract/CCQCQF5TPUBMT73XI7AFXRTSIRBJKNE35GIVOFUYELJL5KTXU6ISQG4S) |
+| **Sample Tx Hash** | [`9dbe2b44…`](https://stellar.expert/explorer/testnet/tx/9dbe2b44e715b75d2e5cb9d342b199287433cffcdf032a25958fde676a6c70f9) |
 
-> After `npm run deploy`, addresses are written to `deployment.json` and `frontend/public/contracts.json`.
+> Addresses written by `npm run deploy` into `deployment.json` and `frontend/public/contracts.json`.
 
 ## Architecture
 
@@ -87,9 +87,9 @@ This is **not** a document manager, crowdfunding app, or education portal.
 | CI/CD pipeline | ✅ GitHub Actions lint/typecheck/test/build |
 | Deployment scripts | ✅ `scripts/deploy.mjs` |
 | Professional documentation | ✅ This README + `docs/` |
-| Stellar Testnet deployment | ⏳ Run `npm run deploy` with funded key |
-| Contract addresses | ⏳ Placeholders until deploy |
-| Transaction hash | ⏳ Placeholder until deploy |
+| Stellar Testnet deployment | ✅ Deployed via `npm run deploy` |
+| Contract addresses | ✅ See Live Demo table |
+| Transaction hash | ✅ `9dbe2b44e715b75d2e5cb9d342b199287433cffcdf032a25958fde676a6c70f9` |
 | Live demo ready | ✅ `npm run dev` / Vercel |
 | Minimum 20 meaningful commits | ✅ Git history |
 
