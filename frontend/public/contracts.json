@@ -1,0 +1,12 @@
+{
+  "network": "TESTNET",
+  "rpcUrl": "https://soroban-testnet.stellar.org",
+  "universityRegistry": "CUNIVERSITY_REGISTRY_PLACEHOLDER",
+  "researchFactory": "CRESEARCH_FACTORY_PLACEHOLDER",
+  "researchProject": "CRESEARCH_PROJECT_PLACEHOLDER",
+  "grantTreasury": "CGRANT_TREASURY_PLACEHOLDER",
+  "peerReview": "CPEER_REVIEW_PLACEHOLDER",
+  "publicationRegistry": "CPUBLICATION_REGISTRY_PLACEHOLDER",
+  "sampleTxHash": "TX_HASH_PLACEHOLDER",
+  "deployedAt": null
+}
