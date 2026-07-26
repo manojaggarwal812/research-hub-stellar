@@ -13,14 +13,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown
+          targets: wasm32v1-none
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
       - name: Test contracts
         run: cargo test --workspace
       - name: Build release WASM
         run: >
-          cargo build --release --target wasm32-unknown-unknown
+          cargo build --release --target wasm32v1-none
           -p university_registry
           -p research_project
           -p research_factory
