@@ -1,7 +1,6 @@
 # Rust
 /target
 **/target
-Cargo.lock
 
 # Node
 node_modules/
@@ -24,7 +23,7 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 
-# Deploy artifacts (keep deployment.json tracked with placeholders)
+# Deploy artifacts
 *.wasm
 /contracts/**/test_snapshots/
 
