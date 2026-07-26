@@ -1,12 +1,6 @@
 #!/usr/bin/env node
 /**
  * Deploy ResearchHub contracts to Stellar Testnet and update frontend config.
- *
- * Prerequisites:
- *   - stellar CLI installed
- *   - Funded identity: stellar keys generate deployer --network testnet --fund
- *
- * Usage: npm run deploy
  */
 import { execSync } from "node:child_process";
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -32,7 +26,7 @@ function extractContractId(output) {
 }
 
 function extractTxHash(output) {
-  const match = output.match(/\b([a-f0-9]{64})\b/i);
+  const match = output.match(/Signing transaction: ([a-f0-9]{64})/i);
   return match ? match[1] : null;
 }
 
@@ -42,48 +36,22 @@ run(
 );
 
 const wasm = (name) => `target/wasm32v1-none/release/${name}.wasm`;
+let sampleTxHash = null;
 
-console.log("Deploying University Registry...");
-const universityRegistry = extractContractId(
-  run(
-    `stellar contract deploy --wasm ${wasm("university_registry")} --source deployer --network testnet`,
-  ),
-);
+function deploy(name) {
+  const out = run(
+    `stellar contract deploy --wasm ${wasm(name)} --source deployer --network testnet`,
+  );
+  sampleTxHash = extractTxHash(out) || sampleTxHash;
+  return extractContractId(out);
+}
 
-console.log("Deploying Research Project...");
-const researchProject = extractContractId(
-  run(
-    `stellar contract deploy --wasm ${wasm("research_project")} --source deployer --network testnet`,
-  ),
-);
-
-console.log("Deploying Research Factory...");
-const researchFactory = extractContractId(
-  run(
-    `stellar contract deploy --wasm ${wasm("research_factory")} --source deployer --network testnet`,
-  ),
-);
-
-console.log("Deploying Grant Treasury...");
-const grantTreasury = extractContractId(
-  run(
-    `stellar contract deploy --wasm ${wasm("grant_treasury")} --source deployer --network testnet`,
-  ),
-);
-
-console.log("Deploying Peer Review...");
-const peerReview = extractContractId(
-  run(
-    `stellar contract deploy --wasm ${wasm("peer_review")} --source deployer --network testnet`,
-  ),
-);
-
-console.log("Deploying Publication Registry...");
-const publicationRegistry = extractContractId(
-  run(
-    `stellar contract deploy --wasm ${wasm("publication_registry")} --source deployer --network testnet`,
-  ),
-);
+const universityRegistry = deploy("university_registry");
+const researchProject = deploy("research_project");
+const researchFactory = deploy("research_factory");
+const grantTreasury = deploy("grant_treasury");
+const peerReview = deploy("peer_review");
+const publicationRegistry = deploy("publication_registry");
 
 console.log("Initializing contracts...");
 run(
@@ -93,10 +61,10 @@ run(
   `stellar contract invoke --id ${researchProject} --source deployer --network testnet -- initialize --admin deployer --factory ${researchFactory} --treasury ${grantTreasury}`,
 );
 run(
-  `stellar contract invoke --id ${researchFactory} --source deployer --network testnet -- initialize --admin deployer --university_registry ${universityRegistry} --research_project ${researchProject}`,
+  `stellar contract invoke --id ${grantTreasury} --source deployer --network testnet -- initialize --admin deployer --research_project ${researchProject} --factory ${researchFactory} --fee_bps 250 --fee_recipient deployer`,
 );
 run(
-  `stellar contract invoke --id ${grantTreasury} --source deployer --network testnet -- initialize --admin deployer --research_project ${researchProject}`,
+  `stellar contract invoke --id ${researchFactory} --source deployer --network testnet -- initialize --admin deployer --university_registry ${universityRegistry} --research_project ${researchProject} --grant_treasury ${grantTreasury}`,
 );
 run(
   `stellar contract invoke --id ${peerReview} --source deployer --network testnet -- initialize --admin deployer --research_project ${researchProject}`,
@@ -109,11 +77,13 @@ console.log("Sample university registration...");
 const sampleOut = run(
   `stellar contract invoke --id ${universityRegistry} --source deployer --network testnet -- register_university --admin deployer --name "ResearchHub Demo University" --country "US"`,
 );
+sampleTxHash = extractTxHash(sampleOut) || sampleTxHash;
 console.log(sampleOut);
 
-const sampleTxHash =
-  extractTxHash(sampleOut) ||
-  "Check stellar.expert for the latest register_university transaction";
+const verifyOut = run(
+  `stellar contract invoke --id ${universityRegistry} --source deployer --network testnet -- verify_university --caller deployer --university_id 1`,
+);
+sampleTxHash = extractTxHash(verifyOut) || sampleTxHash;
 
 const deployer = run("stellar keys address deployer");
 const deployment = {
@@ -126,18 +96,13 @@ const deployment = {
   grantTreasury,
   peerReview,
   publicationRegistry,
-  sampleTxHash,
+  sampleTxHash: sampleTxHash || "TX_HASH_PLACEHOLDER",
+  feeBps: 250,
   deployedAt: new Date().toISOString(),
-  explorers: {
-    universityRegistry: `https://stellar.expert/explorer/testnet/contract/${universityRegistry}`,
-    researchFactory: `https://stellar.expert/explorer/testnet/contract/${researchFactory}`,
-    researchProject: `https://stellar.expert/explorer/testnet/contract/${researchProject}`,
-    grantTreasury: `https://stellar.expert/explorer/testnet/contract/${grantTreasury}`,
-    peerReview: `https://stellar.expert/explorer/testnet/contract/${peerReview}`,
-    publicationRegistry: `https://stellar.expert/explorer/testnet/contract/${publicationRegistry}`,
-  },
 };
 
+mkdirSync(join(root, "deployments"), { recursive: true });
+writeFileSync(join(root, "deployments", "testnet.json"), JSON.stringify(deployment, null, 2));
 writeFileSync(join(root, "deployment.json"), JSON.stringify(deployment, null, 2));
 mkdirSync(join(root, "frontend", "public"), { recursive: true });
 writeFileSync(

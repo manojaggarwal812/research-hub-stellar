@@ -7,29 +7,27 @@ on:
 
 jobs:
   contracts:
-    name: Smart Contract Tests
+    name: Contracts · test + WASM + deployment file
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32v1-none
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
       - name: Test contracts
         run: cargo test --workspace
       - name: Build release WASM
         run: >
           cargo build --release --target wasm32v1-none
-          -p university_registry
-          -p research_project
-          -p research_factory
-          -p grant_treasury
-          -p peer_review
-          -p publication_registry
+          -p university_registry -p research_project -p research_factory
+          -p grant_treasury -p peer_review -p publication_registry
+      - name: Validate deployments/testnet.json
+        run: |
+          node -e "const d=require('./deployments/testnet.json'); const keys=['universityRegistry','researchFactory','researchProject','grantTreasury','peerReview','publicationRegistry','sampleTxHash','network']; for (const k of keys) { if (!d[k]) { console.error('missing',k); process.exit(1);} } console.log('deployment file ok', d.network);"
 
   frontend:
-    name: Frontend Lint, Typecheck, Test, Build
+    name: Frontend · lint typecheck test build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,7 +52,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy placeholder
+      - name: Vercel production deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          echo "Configure Vercel project with root=frontend"
-          echo "Set VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID to enable auto-deploy"
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN not set — skip deploy (configure secrets for auto-deploy)"
+            exit 0
+          fi
+          npm i -g vercel
+          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          vercel build --prod --token=$VERCEL_TOKEN
+          vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
