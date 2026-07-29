@@ -5,11 +5,7 @@ import {
   TransactionBuilder,
   xdr,
 } from "@stellar/stellar-sdk";
-import {
-  Server as SorobanRpcServer,
-  Api as SorobanApi,
-  assembleTransaction,
-} from "@stellar/stellar-sdk/rpc";
+import { Server as SorobanRpcServer } from "@stellar/stellar-sdk/rpc";
 import type { NetworkConfig } from "@/lib/network";
 import { isPlaceholderId } from "@/lib/network";
 
@@ -42,16 +38,15 @@ export async function prepareInvoke(
     .setTimeout(90)
     .build();
 
-  const sim = await server.simulateTransaction(built);
-  if (SorobanApi.isSimulationError(sim)) {
-    throw new Error(typeof sim.error === "string" ? sim.error : "Simulation failed");
+  try {
+    return await server.prepareTransaction(built);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("simulation") || message.includes("Simulation")) {
+      throw new Error(message);
+    }
+    throw err;
   }
-  if (!SorobanApi.isSimulationSuccess(sim)) {
-    throw new Error("Unexpected simulation response");
-  }
-
-  const assembled = assembleTransaction(built, sim).build();
-  return assembled;
 }
 
 export async function submitSignedXdr(
