@@ -18,6 +18,7 @@ import type {
   University,
 } from "@/lib/types";
 import { isPlaceholderId, toNetworkConfig } from "@/lib/network";
+import { parseSorobanError } from "@/lib/errors";
 import {
   fetchProjects,
   fetchTreasuryTotals,
@@ -73,12 +74,28 @@ export function HubDataProvider({ children }: { children: ReactNode }) {
       setContracts(cfg);
       const net = toNetworkConfig(cfg);
 
-      const [unis, projs, totals, events] = await Promise.all([
+      const [uniResult, projResult, treasuryResult, eventsResult] = await Promise.allSettled([
         fetchUniversities(net),
         fetchProjects(net),
         fetchTreasuryTotals(net),
         pollHubEvents(net),
       ]);
+
+      const unis = uniResult.status === "fulfilled" ? uniResult.value : [];
+      const projs = projResult.status === "fulfilled" ? projResult.value : [];
+      const totals =
+        treasuryResult.status === "fulfilled"
+          ? treasuryResult.value
+          : { deposited: 0, released: 0, fees: 0 };
+      const events = eventsResult.status === "fulfilled" ? eventsResult.value : [];
+
+      const partialErrors = [uniResult, projResult, treasuryResult, eventsResult]
+        .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+        .map((r) => parseSorobanError(r.reason));
+
+      if (partialErrors.length === 4) {
+        throw new Error(partialErrors[0] ?? "Failed to load hub data");
+      }
 
       setUniversities(unis);
       setProjects(projs);

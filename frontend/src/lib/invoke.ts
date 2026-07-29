@@ -3,9 +3,10 @@ import {
   Contract,
   Transaction,
   TransactionBuilder,
-  xdr,
-} from "@stellar/stellar-sdk";
-import { Server as SorobanRpcServer } from "@stellar/stellar-sdk/rpc";
+  type FeeBumpTransaction,
+  type xdr,
+} from "@/lib/stellar-client";
+import { Api as SorobanApi, Server as SorobanRpcServer } from "@stellar/stellar-sdk/rpc";
 import type { NetworkConfig } from "@/lib/network";
 import { isPlaceholderId } from "@/lib/network";
 import { parseSorobanError } from "@/lib/errors";
@@ -50,8 +51,18 @@ export async function submitSignedXdr(
   config: NetworkConfig,
   signedXdr: string,
 ): Promise<string> {
+  if (!signedXdr || typeof signedXdr !== "string") {
+    throw new Error("Wallet returned an invalid signed transaction.");
+  }
+
+  let tx: Transaction | FeeBumpTransaction;
+  try {
+    tx = TransactionBuilder.fromXDR(signedXdr, config.networkPassphrase);
+  } catch (err) {
+    throw new Error(parseSorobanError(err));
+  }
+
   const server = rpc(config);
-  const tx = TransactionBuilder.fromXDR(signedXdr, config.networkPassphrase);
   const sent = await server.sendTransaction(tx);
   if (sent.status === "ERROR") {
     throw new Error(sent.errorResult?.toXDR("base64") ?? "Transaction rejected by RPC");

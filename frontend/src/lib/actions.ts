@@ -1,4 +1,4 @@
-import { nativeToScVal } from "@stellar/stellar-sdk";
+import { nativeToScVal } from "@/lib/stellar-client";
 import type { NetworkConfig } from "@/lib/network";
 import { invokeContract, type SignFn } from "@/lib/invoke";
 

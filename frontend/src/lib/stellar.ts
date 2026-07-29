@@ -1,14 +1,15 @@
 import {
+  BASE_FEE,
   Contract,
   nativeToScVal,
-  scValToNative,
-  xdr,
-} from "@stellar/stellar-sdk";
-import { Server as SorobanRpcServer, Api as SorobanApi } from "@stellar/stellar-sdk/rpc";
-import { BASE_FEE, TransactionBuilder } from "@stellar/stellar-sdk";
+  TransactionBuilder,
+  type xdr,
+} from "@/lib/stellar-client";
+import { Api as SorobanApi, Server as SorobanRpcServer } from "@stellar/stellar-sdk/rpc";
 import type { NetworkConfig } from "@/lib/network";
 import { isPlaceholderId } from "@/lib/network";
 import { parseSorobanError } from "@/lib/errors";
+import { safeScValToNative, scValToNativeStrict } from "@/lib/scval";
 import type { ActivityEvent, ResearchProject, University } from "@/lib/types";
 
 function rpc(config: NetworkConfig) {
@@ -30,7 +31,6 @@ async function simulateAndRead<T>(
       ? config.deployer
       : "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
   const account = await server.getAccount(source).catch(async () => {
-    // Fall back: some RPCs allow simulation with any funded testnet account.
     throw new Error("Unable to load simulation account — set deployer in contracts.json");
   });
 
@@ -50,7 +50,17 @@ async function simulateAndRead<T>(
   if (!SorobanApi.isSimulationSuccess(sim) || !sim.result?.retval) {
     throw new Error("Unexpected simulation response");
   }
-  return scValToNative(sim.result.retval) as T;
+  return scValToNativeStrict<T>(sim.result.retval);
+}
+
+function mapUniversity(raw: Record<string, unknown>): University {
+  return {
+    id: Number(raw.id ?? 0),
+    name: String(raw.name ?? ""),
+    admin: String(raw.admin ?? ""),
+    verified: Boolean(raw.verified),
+    country: String(raw.country ?? ""),
+  };
 }
 
 export async function fetchUniversityCount(config: NetworkConfig): Promise<number> {
@@ -71,15 +81,9 @@ export async function fetchUniversity(
     config,
     config.universityRegistry,
     "get_university",
-    nativeToScVal(id, { type: "u64" }),
+    nativeToScVal(BigInt(id), { type: "u64" }),
   );
-  return {
-    id: Number(raw.id),
-    name: String(raw.name),
-    admin: String(raw.admin),
-    verified: Boolean(raw.verified),
-    country: String(raw.country),
-  };
+  return mapUniversity(raw);
 }
 
 export async function fetchUniversities(config: NetworkConfig): Promise<University[]> {
@@ -109,19 +113,19 @@ export async function fetchProject(
     config,
     config.researchProject,
     "get_project",
-    nativeToScVal(id, { type: "u64" }),
+    nativeToScVal(BigInt(id), { type: "u64" }),
   );
   const statusMap = ["Draft", "Active", "UnderReview", "Completed", "Cancelled"] as const;
   const statusIdx = Number(raw.status);
   return {
-    id: Number(raw.id),
-    title: String(raw.title),
+    id: Number(raw.id ?? 0),
+    title: String(raw.title ?? ""),
     abstractText: String(raw.abstract_text ?? raw.abstractText ?? ""),
-    lead: String(raw.lead),
-    universityId: Number(raw.university_id ?? raw.universityId),
+    lead: String(raw.lead ?? ""),
+    universityId: Number(raw.university_id ?? raw.universityId ?? 0),
     status: statusMap[statusIdx] ?? "Active",
-    grantAmount: Number(raw.grant_amount ?? raw.grantAmount),
-    releasedAmount: Number(raw.released_amount ?? raw.releasedAmount),
+    grantAmount: Number(raw.grant_amount ?? raw.grantAmount ?? 0),
+    releasedAmount: Number(raw.released_amount ?? raw.releasedAmount ?? 0),
     milestones: [],
     field: "On-chain",
   };
@@ -186,7 +190,7 @@ export async function pollHubEvents(
     });
 
     return (response.events ?? []).map((evt, i) => {
-      const topics = (evt.topic ?? []).map((t) => String(scValToNative(t)));
+      const topics = (evt.topic ?? []).map((t) => String(safeScValToNative(t)));
       const type = mapTopics(topics);
       return {
         id: evt.id ?? `evt-${i}-${evt.ledger}`,

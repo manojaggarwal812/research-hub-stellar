@@ -35,5 +35,9 @@ export function parseSorobanError(raw: unknown): string {
     }
   }
 
+  if (/Bad union switch/i.test(message)) {
+    return "Network decode error — hard refresh (Ctrl+Shift+R), reconnect Freighter on Testnet, then retry.";
+  }
+
   return message;
 }
