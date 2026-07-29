@@ -2,10 +2,11 @@ import {
   BASE_FEE,
   Contract,
   nativeToScVal,
+  SorobanApi,
+  SorobanRpcServer,
   TransactionBuilder,
   type xdr,
 } from "@/lib/stellar-client";
-import { Api as SorobanApi, Server as SorobanRpcServer } from "@stellar/stellar-sdk/rpc";
 import type { NetworkConfig } from "@/lib/network";
 import { isPlaceholderId } from "@/lib/network";
 import { parseSorobanError } from "@/lib/errors";

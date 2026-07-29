@@ -1,8 +1,13 @@
-import { scValToNative, type xdr } from "@/lib/stellar-client";
+import { scValToNative, xdr, type xdr as Xdr } from "@/lib/stellar-client";
 
-export function safeScValToNative(scv: xdr.ScVal): unknown {
+/** Re-parse through local xdr to avoid duplicate js-xdr bundle instanceof issues. */
+function rehydrateScVal(scv: Xdr.ScVal): Xdr.ScVal {
+  return xdr.ScVal.fromXDR(scv.toXDR("base64"), "base64");
+}
+
+export function safeScValToNative(scv: Xdr.ScVal): unknown {
   try {
-    return scValToNative(scv);
+    return scValToNative(rehydrateScVal(scv));
   } catch {
     try {
       return scv.toXDR("base64");
@@ -12,9 +17,9 @@ export function safeScValToNative(scv: xdr.ScVal): unknown {
   }
 }
 
-export function scValToNativeStrict<T>(scv: xdr.ScVal): T {
+export function scValToNativeStrict<T>(scv: Xdr.ScVal): T {
   try {
-    return scValToNative(scv) as T;
+    return scValToNative(rehydrateScVal(scv)) as T;
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     if (/Bad union switch/i.test(detail)) {

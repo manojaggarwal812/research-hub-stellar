@@ -1,18 +1,25 @@
 import {
+  assembleTransaction,
   BASE_FEE,
   Contract,
+  SorobanApi,
+  SorobanRpcServer,
   Transaction,
   TransactionBuilder,
   type FeeBumpTransaction,
   type xdr,
 } from "@/lib/stellar-client";
-import { Api as SorobanApi, Server as SorobanRpcServer } from "@stellar/stellar-sdk/rpc";
 import type { NetworkConfig } from "@/lib/network";
 import { isPlaceholderId } from "@/lib/network";
 import { parseSorobanError } from "@/lib/errors";
 
 function rpc(config: NetworkConfig) {
   return new SorobanRpcServer(config.rpcUrl);
+}
+
+/** Re-build tx through XDR so RPC + builder share the same Transaction class. */
+function normalizeTx(xdrEnvelope: string, passphrase: string): Transaction {
+  return TransactionBuilder.fromXDR(xdrEnvelope, passphrase) as Transaction;
 }
 
 /**
@@ -41,7 +48,17 @@ export async function prepareInvoke(
     .build();
 
   try {
-    return await server.prepareTransaction(built);
+    const sim = await server.simulateTransaction(built);
+    if (SorobanApi.isSimulationError(sim)) {
+      throw new Error(
+        parseSorobanError(typeof sim.error === "string" ? sim.error : "Simulation failed"),
+      );
+    }
+    if (!SorobanApi.isSimulationSuccess(sim)) {
+      throw new Error("Unexpected simulation response");
+    }
+    const assembled = assembleTransaction(built, sim).build();
+    return normalizeTx(assembled.toXDR(), config.networkPassphrase);
   } catch (err) {
     throw new Error(parseSorobanError(err));
   }
@@ -51,13 +68,14 @@ export async function submitSignedXdr(
   config: NetworkConfig,
   signedXdr: string,
 ): Promise<string> {
-  if (!signedXdr || typeof signedXdr !== "string") {
+  const trimmed = signedXdr.trim();
+  if (!trimmed) {
     throw new Error("Wallet returned an invalid signed transaction.");
   }
 
   let tx: Transaction | FeeBumpTransaction;
   try {
-    tx = TransactionBuilder.fromXDR(signedXdr, config.networkPassphrase);
+    tx = TransactionBuilder.fromXDR(trimmed, config.networkPassphrase);
   } catch (err) {
     throw new Error(parseSorobanError(err));
   }

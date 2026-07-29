@@ -12,6 +12,7 @@ import { useWallet } from "@/lib/wallet";
 import { formatXlm, paginate } from "@/lib/format";
 import { toNetworkConfig } from "@/lib/network";
 import { addMilestone, launchResearch, submitMilestone } from "@/lib/actions";
+import { parseSorobanError } from "@/lib/errors";
 
 export default function ProjectsPage() {
   const { loading, projects, universities, contracts, refresh } = useHubData();
@@ -73,7 +74,7 @@ export default function ProjectsPage() {
       }
       await refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Transaction failed");
+      toast.error(parseSorobanError(err));
     } finally {
       setBusy(false);
       setPending(null);

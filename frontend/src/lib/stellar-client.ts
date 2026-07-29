@@ -1,6 +1,5 @@
 /**
- * Single import surface for core Stellar SDK (avoids browser min-bundle duplicate).
- * RPC imports stay as `@stellar/stellar-sdk/rpc` in stellar.ts / invoke.ts.
+ * Single browser-safe Stellar import surface (no-axios build = one stellar-base copy).
  */
 export {
   BASE_FEE,
@@ -12,4 +11,10 @@ export {
   xdr,
   Networks,
   type FeeBumpTransaction,
-} from "@stellar/stellar-sdk";
+} from "@stellar/stellar-sdk/no-axios";
+
+export {
+  Server as SorobanRpcServer,
+  Api as SorobanApi,
+  assembleTransaction,
+} from "@stellar/stellar-sdk/no-axios/rpc";
