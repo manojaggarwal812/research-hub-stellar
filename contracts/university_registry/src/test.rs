@@ -59,3 +59,58 @@ fn unauthorized_verify_fails() {
     let result = client.try_verify_university(&attacker, &id);
     assert!(result.is_err());
 }
+
+#[test]
+fn verify_nonexistent_university_fails() {
+    let (_env, platform, client) = setup();
+    assert!(client.try_verify_university(&platform, &999u64).is_err());
+}
+
+#[test]
+fn get_university_returns_correct_data() {
+    let (env, _platform, client) = setup();
+    let uni_admin = Address::generate(&env);
+    client.register_university(
+        &uni_admin,
+        &String::from_str(&env, "Harvard"),
+        &String::from_str(&env, "US"),
+    );
+    let uni = client.get_university(&1u64);
+    assert_eq!(uni.name, String::from_str(&env, "Harvard"));
+    assert_eq!(uni.country, String::from_str(&env, "US"));
+    assert_eq!(uni.admin, uni_admin);
+}
+
+#[test]
+fn multiple_universities_increment_count() {
+    let (env, _platform, client) = setup();
+    for i in 0..5 {
+        let a = Address::generate(&env);
+        client.register_university(
+            &a,
+            &String::from_str(&env, "Uni"),
+            &String::from_str(&env, "X"),
+        );
+    }
+    assert_eq!(client.university_count(), 5);
+}
+
+#[test]
+fn double_verify_is_idempotent() {
+    let (env, platform, client) = setup();
+    let uni_admin = Address::generate(&env);
+    let id = client.register_university(
+        &uni_admin,
+        &String::from_str(&env, "Yale"),
+        &String::from_str(&env, "US"),
+    );
+    client.verify_university(&platform, &id);
+    client.verify_university(&platform, &id);
+    assert!(client.is_verified(&id));
+}
+
+#[test]
+fn get_admin_returns_initializer() {
+    let (_env, platform, client) = setup();
+    assert_eq!(client.get_admin(), platform);
+}

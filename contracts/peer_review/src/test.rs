@@ -73,3 +73,64 @@ fn review_missing_project_fails() {
     let result = reviews.try_submit_review(&reviewer, &99u64, &50u32, &2u32);
     assert!(result.is_err());
 }
+
+#[test]
+fn approve_nonexistent_review_fails() {
+    let (_env, admin, _factory, _project, reviews) = setup();
+    assert!(reviews.try_approve_review(&admin, &999u64).is_err());
+}
+
+#[test]
+fn unauthorized_approve_review_fails() {
+    let (env, _admin, factory, project, reviews) = setup();
+    let lead = Address::generate(&env);
+    let reviewer = Address::generate(&env);
+    let attacker = Address::generate(&env);
+    let pid = project.create_project(
+        &factory,
+        &lead,
+        &1u64,
+        &String::from_str(&env, "A"),
+        &String::from_str(&env, "B"),
+        &100i128,
+    );
+    let rid = reviews.submit_review(&reviewer, &pid, &70u32, &0u32);
+    assert!(reviews.try_approve_review(&attacker, &rid).is_err());
+}
+
+#[test]
+fn review_count_increments() {
+    let (env, _admin, factory, project, reviews) = setup();
+    let lead = Address::generate(&env);
+    let pid = project.create_project(
+        &factory,
+        &lead,
+        &1u64,
+        &String::from_str(&env, "A"),
+        &String::from_str(&env, "B"),
+        &100i128,
+    );
+    for _ in 0..3 {
+        let r = Address::generate(&env);
+        reviews.submit_review(&r, &pid, &50u32, &1u32);
+    }
+    assert_eq!(reviews.review_count(), 3);
+    assert_eq!(reviews.project_review_count(&pid), 3);
+}
+
+#[test]
+fn invalid_decision_rejected() {
+    let (env, _admin, factory, project, reviews) = setup();
+    let lead = Address::generate(&env);
+    let reviewer = Address::generate(&env);
+    let pid = project.create_project(
+        &factory,
+        &lead,
+        &1u64,
+        &String::from_str(&env, "A"),
+        &String::from_str(&env, "B"),
+        &100i128,
+    );
+    let result = reviews.try_submit_review(&reviewer, &pid, &50u32, &99u32);
+    assert!(result.is_err());
+}

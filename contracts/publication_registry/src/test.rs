@@ -104,3 +104,71 @@ fn unauthorized_registration_fails() {
     );
     assert!(result.is_err());
 }
+
+#[test]
+fn publication_for_nonexistent_project_fails() {
+    let (env, _admin, _factory, _project, pubs) = setup();
+    let lead = Address::generate(&env);
+    let result = pubs.try_register_publication(
+        &lead,
+        &999u64,
+        &String::from_str(&env, "X"),
+        &String::from_str(&env, "10.1000/y"),
+        &String::from_str(&env, "Y"),
+    );
+    assert!(result.is_err());
+}
+
+#[test]
+fn multiple_publications_per_project() {
+    let (env, _admin, factory, project, pubs) = setup();
+    let lead = Address::generate(&env);
+    let pid = project.create_project(
+        &factory,
+        &lead,
+        &1u64,
+        &String::from_str(&env, "Multi"),
+        &String::from_str(&env, "Pub"),
+        &500i128,
+    );
+    pubs.register_publication(
+        &lead,
+        &pid,
+        &String::from_str(&env, "Paper A"),
+        &String::from_str(&env, "10.1000/a"),
+        &String::from_str(&env, "Auth A"),
+    );
+    pubs.register_publication(
+        &lead,
+        &pid,
+        &String::from_str(&env, "Paper B"),
+        &String::from_str(&env, "10.1000/b"),
+        &String::from_str(&env, "Auth B"),
+    );
+    assert_eq!(pubs.publication_count(), 2);
+    assert_eq!(pubs.project_publication_count(&pid), 2);
+}
+
+#[test]
+fn get_publication_returns_correct_data() {
+    let (env, _admin, factory, project, pubs) = setup();
+    let lead = Address::generate(&env);
+    let pid = project.create_project(
+        &factory,
+        &lead,
+        &1u64,
+        &String::from_str(&env, "G"),
+        &String::from_str(&env, "H"),
+        &100i128,
+    );
+    let id = pubs.register_publication(
+        &lead,
+        &pid,
+        &String::from_str(&env, "Deep Learning"),
+        &String::from_str(&env, "10.9999/dl"),
+        &String::from_str(&env, "Smith et al."),
+    );
+    let pub_data = pubs.get_publication(&id);
+    assert_eq!(pub_data.title, String::from_str(&env, "Deep Learning"));
+    assert_eq!(pub_data.doi, String::from_str(&env, "10.9999/dl"));
+}

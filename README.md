@@ -29,7 +29,7 @@ Compared with peers such as [ImpactChain](https://github.com/Nikkunj-145/ImpactC
 
 | | Link |
 |---|---|
-| **Live app (Vercel)** | _Deploy frontend — see [`docs/VERCEL_DEPLOY.md`](./docs/VERCEL_DEPLOY.md)_ |
+| **Live app (Vercel)** | <https://research-hub-stellar.vercel.app/> |
 | **Demo video** | _Record with [`docs/DEMO_VIDEO.md`](./docs/DEMO_VIDEO.md)_ |
 | **GitHub** | _Push this repo under your account_ |
 | **Deploy / sample tx** | See [`deployments/testnet.json`](./deployments/testnet.json) |
@@ -193,7 +193,7 @@ Pages: Landing · Dashboard · Projects · Universities · Peer Reviews · Grant
 ## Testing
 
 ```bash
-# 21+ smart-contract tests (auth, fees, factory allocate, regression)
+# 40 smart-contract tests (auth, edge cases, fees, factory allocate, regression)
 cargo test --workspace
 
 cd frontend

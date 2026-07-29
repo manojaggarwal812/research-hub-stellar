@@ -109,6 +109,41 @@ fn unauthorized_approve_fails() {
 }
 
 #[test]
+fn double_approve_is_additive() {
+    let (env, admin, factory, project, treasury) = setup_linked();
+    let lead = Address::generate(&env);
+    let pid = project.create_project(
+        &factory,
+        &lead,
+        &1u64,
+        &String::from_str(&env, "X"),
+        &String::from_str(&env, "Y"),
+        &5_000i128,
+    );
+    treasury.approve_grant(&admin, &pid, &3_000i128);
+    treasury.approve_grant(&admin, &pid, &2_000i128);
+    assert_eq!(treasury.get_project_balance(&pid), 5_000);
+}
+
+#[test]
+fn release_more_than_balance_fails() {
+    let (env, admin, factory, project, treasury) = setup_linked();
+    let lead = Address::generate(&env);
+    let pid = project.create_project(
+        &factory,
+        &lead,
+        &1u64,
+        &String::from_str(&env, "X"),
+        &String::from_str(&env, "Y"),
+        &1_000i128,
+    );
+    treasury.approve_grant(&admin, &pid, &500i128);
+    project.add_milestone(&lead, &pid, &String::from_str(&env, "M"), &900i128);
+    project.submit_milestone(&lead, &pid, &0u32);
+    assert!(treasury.try_release_funding(&admin, &pid, &0u32).is_err());
+}
+
+#[test]
 fn fee_policy_cap_enforced() {
     let env = Env::default();
     env.mock_all_auths();
