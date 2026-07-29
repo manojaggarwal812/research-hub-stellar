@@ -30,8 +30,9 @@ Compared with peers such as [ImpactChain](https://github.com/Nikkunj-145/ImpactC
 | | Link |
 |---|---|
 | **Live app (Vercel)** | <https://research-hub-stellar.vercel.app/> |
-| **Demo video** | _Record with [`docs/DEMO_VIDEO.md`](./docs/DEMO_VIDEO.md)_ |
-| **GitHub** | _Push this repo under your account_ |
+| **Demo video** | _See recording script: [`docs/DEMO_VIDEO.md`](./docs/DEMO_VIDEO.md)_ |
+| **GitHub** | <https://github.com/manojaggarwal812/research-hub-stellar> |
+| **Green CI/CD run** | <https://github.com/manojaggarwal812/research-hub-stellar/actions/runs/30439795781> |
 | **Deploy / sample tx** | See [`deployments/testnet.json`](./deployments/testnet.json) |
 | **University Registry** | [`CBHNV4VX…`](https://stellar.expert/explorer/testnet/contract/CBHNV4VXXFPJMRN2HLKR3LZ2J3DAE23NK7CPL23GYBA7HKRCO5O5DWLQ) |
 | **Research Factory** | [`CC5DXDWP…`](https://stellar.expert/explorer/testnet/contract/CC5DXDWPMJLYS6TEBO4CEV4VWFRD3DBQ3AYVGH3ZRUQVFPFHGQNCVGVJ) |
@@ -42,6 +43,22 @@ Compared with peers such as [ImpactChain](https://github.com/Nikkunj-145/ImpactC
 | **Sample Tx** | [`718ed421…`](https://stellar.expert/explorer/testnet/tx/718ed421203fc9e13910271d3d9aa068cb18b93c493460a7c766962abc997979) |
 
 > Live IDs also live in [`deployments/testnet.json`](./deployments/testnet.json) and `frontend/public/contracts.json`.
+
+### Screenshots
+
+![Mobile responsive UI](docs/screenshots/mobile-responsive.png)
+
+_Mobile-responsive landing (390×844)_
+
+![Desktop landing](docs/screenshots/desktop-landing.png)
+
+_Desktop landing page_
+
+![Green CI/CD run](docs/screenshots/ci-green-run.png)
+
+_CI/CD — Contracts (test + WASM) → Frontend (lint/typecheck/test/build) → Deploy (Vercel) — all green_
+
+**Test output:** 40 smart-contract tests passing across 6 crates (`cargo test --workspace`). See [CI run](https://github.com/manojaggarwal812/research-hub-stellar/actions/runs/30439795781).
 
 ---
 
