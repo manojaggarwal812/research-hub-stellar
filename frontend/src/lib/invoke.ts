@@ -8,6 +8,7 @@ import {
 import { Server as SorobanRpcServer } from "@stellar/stellar-sdk/rpc";
 import type { NetworkConfig } from "@/lib/network";
 import { isPlaceholderId } from "@/lib/network";
+import { parseSorobanError } from "@/lib/errors";
 
 function rpc(config: NetworkConfig) {
   return new SorobanRpcServer(config.rpcUrl);
@@ -41,11 +42,7 @@ export async function prepareInvoke(
   try {
     return await server.prepareTransaction(built);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("simulation") || message.includes("Simulation")) {
-      throw new Error(message);
-    }
-    throw err;
+    throw new Error(parseSorobanError(err));
   }
 }
 

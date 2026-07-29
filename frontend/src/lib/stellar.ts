@@ -8,6 +8,7 @@ import { Server as SorobanRpcServer, Api as SorobanApi } from "@stellar/stellar-
 import { BASE_FEE, TransactionBuilder } from "@stellar/stellar-sdk";
 import type { NetworkConfig } from "@/lib/network";
 import { isPlaceholderId } from "@/lib/network";
+import { parseSorobanError } from "@/lib/errors";
 import type { ActivityEvent, ResearchProject, University } from "@/lib/types";
 
 function rpc(config: NetworkConfig) {
@@ -44,7 +45,7 @@ async function simulateAndRead<T>(
 
   const sim = await server.simulateTransaction(tx);
   if (SorobanApi.isSimulationError(sim)) {
-    throw new Error(typeof sim.error === "string" ? sim.error : "Simulation failed");
+    throw new Error(parseSorobanError(typeof sim.error === "string" ? sim.error : "Simulation failed"));
   }
   if (!SorobanApi.isSimulationSuccess(sim) || !sim.result?.retval) {
     throw new Error("Unexpected simulation response");

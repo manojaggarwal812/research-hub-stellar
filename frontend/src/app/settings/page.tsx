@@ -1,12 +1,11 @@
 "use client";
 
-import { toast } from "sonner";
 import { PageSkeleton } from "@/components/Skeleton";
 import { useHubData } from "@/lib/hub-data";
 import { useWallet } from "@/lib/wallet";
 
 export default function SettingsPage() {
-  const { loading, contracts, demoMode, setDemoMode, refresh } = useHubData();
+  const { loading, contracts, refresh } = useHubData();
   const { address, network, networkPassphrase } = useWallet();
 
   if (loading) return <PageSkeleton />;
@@ -16,28 +15,16 @@ export default function SettingsPage() {
       <div>
         <h1 className="font-display text-3xl sm:text-4xl">Settings</h1>
         <p className="mt-1 text-[var(--muted)]">
-          Network, wallet session, and honesty toggles for the research console.
+          Network, wallet session, and live contract configuration.
         </p>
       </div>
 
       <section className="rh-panel space-y-3 p-5">
         <h2 className="font-display text-xl">Data policy</h2>
         <p className="text-sm text-[var(--muted)]">
-          ResearchHub is empty-by-default. Charts and tables stay blank until Soroban RPC returns
-          live rows. Demo mode does not invent grant balances.
+          ResearchHub is empty-by-default. All tables hydrate from Soroban RPC — no seed data or
+          fake balances in the UI.
         </p>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={demoMode}
-            onChange={(e) => {
-              setDemoMode(e.target.checked);
-              toast.message(e.target.checked ? "Demo preference saved" : "Live-only preference");
-              void refresh();
-            }}
-          />
-          Prefer aggressive RPC refresh (demo preference flag)
-        </label>
       </section>
 
       <section className="rh-panel space-y-2 p-5 text-sm">

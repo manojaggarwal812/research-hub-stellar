@@ -11,6 +11,7 @@ import { useWallet } from "@/lib/wallet";
 import { paginate } from "@/lib/format";
 import { toNetworkConfig } from "@/lib/network";
 import { registerUniversity, verifyUniversity } from "@/lib/actions";
+import { parseSorobanError } from "@/lib/errors";
 
 export default function UniversitiesPage() {
   const { loading, universities, projects, contracts, refresh } = useHubData();
@@ -33,6 +34,10 @@ export default function UniversitiesPage() {
   }, [universities, query, onlyVerified]);
 
   const paged = paginate(filtered, page, 6);
+  const ownedUniversity = useMemo(
+    () => (address ? universities.find((u) => u.admin === address) : undefined),
+    [address, universities],
+  );
 
   if (loading) return <PageSkeleton />;
 
@@ -56,7 +61,7 @@ export default function UniversitiesPage() {
       }
       await refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Transaction failed");
+      toast.error(parseSorobanError(err));
     } finally {
       setBusy(false);
       setPending(null);
@@ -80,6 +85,12 @@ export default function UniversitiesPage() {
             toast.error("Connect a wallet first");
             return;
           }
+          if (ownedUniversity) {
+            toast.error(
+              `Wallet already registered “${ownedUniversity.name}”. One university per wallet.`,
+            );
+            return;
+          }
           if (!name.trim()) {
             toast.error("Name required");
             return;
@@ -87,16 +98,38 @@ export default function UniversitiesPage() {
           setPending("register");
         }}
       >
+        {ownedUniversity ? (
+          <div className="md:col-span-4 rounded-lg border border-ember-500/30 bg-ember-500/10 p-4 text-sm">
+            Your wallet already registered{" "}
+            <strong>{ownedUniversity.name}</strong> ({ownedUniversity.country}). Each wallet can
+            register only one institution — ask platform admin to verify it, or connect a different
+            wallet for another university.
+          </div>
+        ) : null}
         <div className="md:col-span-2">
           <label className="rh-label">Institution name</label>
-          <input className="rh-input" value={name} onChange={(e) => setName(e.target.value)} />
+          <input
+            className="rh-input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={Boolean(ownedUniversity) || busy}
+          />
         </div>
         <div>
           <label className="rh-label">Country</label>
-          <input className="rh-input" value={country} onChange={(e) => setCountry(e.target.value)} />
+          <input
+            className="rh-input"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            disabled={Boolean(ownedUniversity) || busy}
+          />
         </div>
         <div className="flex items-end">
-          <button type="submit" className="rh-btn-primary w-full" disabled={busy}>
+          <button
+            type="submit"
+            className="rh-btn-primary w-full"
+            disabled={busy || Boolean(ownedUniversity)}
+          >
             Register on-chain
           </button>
         </div>

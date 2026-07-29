@@ -1,3 +1,6 @@
+/**
+ * Test-only fixture data. Not imported by runtime UI — live data comes from Soroban RPC.
+ */
 import type {
   ActivityEvent,
   PeerReview,
