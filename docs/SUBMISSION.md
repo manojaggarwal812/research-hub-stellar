@@ -12,8 +12,8 @@ Peers like [ImpactChain](https://github.com/Nikkunj-145/ImpactChain/) excel at C
 
 | Item | Value |
 |------|-------|
-| Live demo | See `docs/VERCEL_DEPLOY.md` |
-| Demo video | See `docs/DEMO_VIDEO.md` |
+| Live demo | <https://research-hub-stellar.vercel.app/> |
+| Demo video | <https://drive.google.com/file/d/13pkyFbvM-AzVajYCBkDhEiOmH002GNa3/view?usp=sharing> |
 | Network | Stellar Testnet |
 | Deployment record | `deployments/testnet.json` |
 

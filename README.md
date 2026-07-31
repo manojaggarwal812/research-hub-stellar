@@ -30,7 +30,7 @@ Compared with peers such as [ImpactChain](https://github.com/Nikkunj-145/ImpactC
 | | Link |
 |---|---|
 | **Live app (Vercel)** | <https://research-hub-stellar.vercel.app/> |
-| **Demo video** | _See recording script: [`docs/DEMO_VIDEO.md`](./docs/DEMO_VIDEO.md)_ |
+| **Demo video** | <https://drive.google.com/file/d/13pkyFbvM-AzVajYCBkDhEiOmH002GNa3/view?usp=sharing> |
 | **GitHub** | <https://github.com/manojaggarwal812/research-hub-stellar> |
 | **Green CI/CD run** | <https://github.com/manojaggarwal812/research-hub-stellar/actions/runs/30439795781> |
 | **Deploy / sample tx** | See [`deployments/testnet.json`](./deployments/testnet.json) |
